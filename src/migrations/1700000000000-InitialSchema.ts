@@ -100,7 +100,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
 
     await queryRunner.query(`
       CREATE TABLE "menu_categories" (
-        "id"                CHARACTER VARYING NOT NULL DEFAULT uuid_generate_v4(),
+        "id"                UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "name"              CHARACTER VARYING NOT NULL,
         "description"       CHARACTER VARYING,
         "imageUrl"          CHARACTER VARYING,
