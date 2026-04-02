@@ -4,64 +4,91 @@ export class InitialSchema1700000000000 implements MigrationInterface {
   name = 'InitialSchema1700000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // ─── ENUM TYPES ───────────────────────────────────────────────────────────
+    // ─── ENUM TYPES (idempotent) ──────────────────────────────────────────────
+    // Use DO blocks so re-running on an existing schema is a no-op.
 
     await queryRunner.query(`
-      CREATE TYPE "public"."users_role_enum" AS ENUM('super_admin', 'admin')
+      DO $$ BEGIN
+        CREATE TYPE "public"."users_role_enum" AS ENUM('super_admin', 'admin');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."specials_type_enum" AS ENUM('daily', 'game_time', 'day_time', 'chef', 'seasonal')
+      DO $$ BEGIN
+        CREATE TYPE "public"."specials_type_enum" AS ENUM('daily', 'game_time', 'day_time', 'chef', 'seasonal');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."specials_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+      DO $$ BEGIN
+        CREATE TYPE "public"."specials_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."specials_specialcategory_enum" AS ENUM('regular', 'late_night')
+      DO $$ BEGIN
+        CREATE TYPE "public"."specials_specialcategory_enum" AS ENUM('regular', 'late_night');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."events_type_enum" AS ENUM('live_music', 'sports_viewing', 'trivia_night', 'karaoke', 'private_party', 'special_event')
+      DO $$ BEGIN
+        CREATE TYPE "public"."events_type_enum" AS ENUM('live_music', 'sports_viewing', 'trivia_night', 'karaoke', 'private_party', 'special_event');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."opening_hours_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+      DO $$ BEGIN
+        CREATE TYPE "public"."opening_hours_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."todos_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')
+      DO $$ BEGIN
+        CREATE TYPE "public"."todos_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."todos_status_enum" AS ENUM('pending', 'in_progress', 'completed', 'cancelled')
+      DO $$ BEGIN
+        CREATE TYPE "public"."todos_status_enum" AS ENUM('pending', 'in_progress', 'completed', 'cancelled');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."scheduled_notifications_type_enum" AS ENUM('special', 'event')
+      DO $$ BEGIN
+        CREATE TYPE "public"."scheduled_notifications_type_enum" AS ENUM('special', 'event');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."scheduled_notifications_status_enum" AS ENUM('pending', 'sent', 'failed', 'cancelled')
+      DO $$ BEGIN
+        CREATE TYPE "public"."scheduled_notifications_status_enum" AS ENUM('pending', 'sent', 'failed', 'cancelled');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."announcements_type_enum" AS ENUM('general', 'promotion', 'closure', 'menu_update', 'community', 'holiday')
+      DO $$ BEGIN
+        CREATE TYPE "public"."announcements_type_enum" AS ENUM('general', 'promotion', 'closure', 'menu_update', 'community', 'holiday');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."announcements_priority_enum" AS ENUM('low', 'normal', 'high', 'urgent')
+      DO $$ BEGIN
+        CREATE TYPE "public"."announcements_priority_enum" AS ENUM('low', 'normal', 'high', 'urgent');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      CREATE TYPE "public"."announcements_status_enum" AS ENUM('draft', 'sending', 'sent', 'failed')
+      DO $$ BEGIN
+        CREATE TYPE "public"."announcements_status_enum" AS ENUM('draft', 'sending', 'sent', 'failed');
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
-    // ─── TABLES (no foreign keys first) ──────────────────────────────────────
+    // ─── TABLES (idempotent — IF NOT EXISTS) ─────────────────────────────────
 
     await queryRunner.query(`
-      CREATE TABLE "users" (
+      CREATE TABLE IF NOT EXISTS "users" (
         "id"                           UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "email"                        CHARACTER VARYING NOT NULL,
         "password"                     CHARACTER VARYING NOT NULL,
@@ -85,7 +112,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "primary_categories" (
+      CREATE TABLE IF NOT EXISTS "primary_categories" (
         "id"          UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "name"        CHARACTER VARYING NOT NULL,
         "description" CHARACTER VARYING,
@@ -99,7 +126,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "menu_categories" (
+      CREATE TABLE IF NOT EXISTS "menu_categories" (
         "id"                UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "name"              CHARACTER VARYING NOT NULL,
         "description"       CHARACTER VARYING,
@@ -114,7 +141,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "measurement_types" (
+      CREATE TABLE IF NOT EXISTS "measurement_types" (
         "id"          UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "name"        CHARACTER VARYING(100) NOT NULL,
         "description" TEXT,
@@ -128,7 +155,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "menu_items" (
+      CREATE TABLE IF NOT EXISTS "menu_items" (
         "id"              UUID             NOT NULL DEFAULT uuid_generate_v4(),
         "name"            CHARACTER VARYING NOT NULL,
         "description"     TEXT             NOT NULL DEFAULT '',
@@ -148,7 +175,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "menu_item_measurements" (
+      CREATE TABLE IF NOT EXISTS "menu_item_measurements" (
         "id"                UUID      NOT NULL DEFAULT uuid_generate_v4(),
         "menuItemId"        UUID      NOT NULL,
         "measurementTypeId" UUID,
@@ -162,7 +189,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "specials" (
+      CREATE TABLE IF NOT EXISTS "specials" (
         "id"               UUID                                    NOT NULL DEFAULT uuid_generate_v4(),
         "title"            CHARACTER VARYING                       NOT NULL,
         "description"      TEXT                                    NOT NULL,
@@ -183,7 +210,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "events" (
+      CREATE TABLE IF NOT EXISTS "events" (
         "id"               UUID                          NOT NULL DEFAULT uuid_generate_v4(),
         "title"            CHARACTER VARYING             NOT NULL,
         "description"      TEXT                          NOT NULL,
@@ -202,7 +229,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "opening_hours" (
+      CREATE TABLE IF NOT EXISTS "opening_hours" (
         "id"             UUID                                       NOT NULL DEFAULT uuid_generate_v4(),
         "dayOfWeek"      "public"."opening_hours_dayofweek_enum"    NOT NULL,
         "openTime"       TIME,
@@ -218,7 +245,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "todos" (
+      CREATE TABLE IF NOT EXISTS "todos" (
         "id"           UUID                         NOT NULL DEFAULT uuid_generate_v4(),
         "title"        CHARACTER VARYING            NOT NULL,
         "description"  TEXT,
@@ -234,7 +261,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "subscribers" (
+      CREATE TABLE IF NOT EXISTS "subscribers" (
         "id"               UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "email"            CHARACTER VARYING NOT NULL,
         "isActive"         BOOLEAN           NOT NULL DEFAULT true,
@@ -255,7 +282,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "scheduled_notifications" (
+      CREATE TABLE IF NOT EXISTS "scheduled_notifications" (
         "id"           UUID                                          NOT NULL DEFAULT uuid_generate_v4(),
         "type"         "public"."scheduled_notifications_type_enum"   NOT NULL,
         "referenceId"  UUID                                          NOT NULL,
@@ -268,7 +295,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "announcements" (
+      CREATE TABLE IF NOT EXISTS "announcements" (
         "id"             UUID                                   NOT NULL DEFAULT uuid_generate_v4(),
         "title"          CHARACTER VARYING                      NOT NULL,
         "content"        TEXT                                   NOT NULL,
@@ -286,7 +313,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "story_categories" (
+      CREATE TABLE IF NOT EXISTS "story_categories" (
         "id"          UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "name"        CHARACTER VARYING NOT NULL,
         "description" TEXT,
@@ -299,7 +326,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE "stories" (
+      CREATE TABLE IF NOT EXISTS "stories" (
         "id"         UUID              NOT NULL DEFAULT uuid_generate_v4(),
         "categoryId" UUID              NOT NULL,
         "imageUrls"  TEXT              NOT NULL DEFAULT '',
@@ -311,60 +338,67 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       )
     `);
 
-    // ─── FOREIGN KEY CONSTRAINTS ──────────────────────────────────────────────
+    // ─── FOREIGN KEY CONSTRAINTS (idempotent) ────────────────────────────────
+    // Using DO blocks to skip if the constraint already exists.
 
     await queryRunner.query(`
-      ALTER TABLE "menu_categories"
-        ADD CONSTRAINT "FK_menu_categories_primaryCategoryId"
-          FOREIGN KEY ("primaryCategoryId")
-          REFERENCES "primary_categories" ("id")
-          ON DELETE SET NULL
-          ON UPDATE NO ACTION
+      DO $$ BEGIN
+        ALTER TABLE "menu_categories"
+          ADD CONSTRAINT "FK_menu_categories_primaryCategoryId"
+            FOREIGN KEY ("primaryCategoryId")
+            REFERENCES "primary_categories" ("id")
+            ON DELETE SET NULL ON UPDATE NO ACTION;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "menu_items"
-        ADD CONSTRAINT "FK_menu_items_categoryId"
-          FOREIGN KEY ("categoryId")
-          REFERENCES "menu_categories" ("id")
-          ON DELETE SET NULL
-          ON UPDATE NO ACTION
+      DO $$ BEGIN
+        ALTER TABLE "menu_items"
+          ADD CONSTRAINT "FK_menu_items_categoryId"
+            FOREIGN KEY ("categoryId")
+            REFERENCES "menu_categories" ("id")
+            ON DELETE SET NULL ON UPDATE NO ACTION;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "menu_item_measurements"
-        ADD CONSTRAINT "FK_menu_item_measurements_menuItemId"
-          FOREIGN KEY ("menuItemId")
-          REFERENCES "menu_items" ("id")
-          ON DELETE CASCADE
-          ON UPDATE NO ACTION
+      DO $$ BEGIN
+        ALTER TABLE "menu_item_measurements"
+          ADD CONSTRAINT "FK_menu_item_measurements_menuItemId"
+            FOREIGN KEY ("menuItemId")
+            REFERENCES "menu_items" ("id")
+            ON DELETE CASCADE ON UPDATE NO ACTION;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "menu_item_measurements"
-        ADD CONSTRAINT "FK_menu_item_measurements_measurementTypeId"
-          FOREIGN KEY ("measurementTypeId")
-          REFERENCES "measurement_types" ("id")
-          ON DELETE SET NULL
-          ON UPDATE NO ACTION
+      DO $$ BEGIN
+        ALTER TABLE "menu_item_measurements"
+          ADD CONSTRAINT "FK_menu_item_measurements_measurementTypeId"
+            FOREIGN KEY ("measurementTypeId")
+            REFERENCES "measurement_types" ("id")
+            ON DELETE SET NULL ON UPDATE NO ACTION;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "todos"
-        ADD CONSTRAINT "FK_todos_createdById"
-          FOREIGN KEY ("createdById")
-          REFERENCES "users" ("id")
-          ON DELETE SET NULL
-          ON UPDATE NO ACTION
+      DO $$ BEGIN
+        ALTER TABLE "todos"
+          ADD CONSTRAINT "FK_todos_createdById"
+            FOREIGN KEY ("createdById")
+            REFERENCES "users" ("id")
+            ON DELETE SET NULL ON UPDATE NO ACTION;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
 
     await queryRunner.query(`
-      ALTER TABLE "stories"
-        ADD CONSTRAINT "FK_stories_categoryId"
-          FOREIGN KEY ("categoryId")
-          REFERENCES "story_categories" ("id")
-          ON DELETE CASCADE
-          ON UPDATE NO ACTION
+      DO $$ BEGIN
+        ALTER TABLE "stories"
+          ADD CONSTRAINT "FK_stories_categoryId"
+            FOREIGN KEY ("categoryId")
+            REFERENCES "story_categories" ("id")
+            ON DELETE CASCADE ON UPDATE NO ACTION;
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$
     `);
   }
 

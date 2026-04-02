@@ -19,6 +19,10 @@ import { ContactModule } from './contact/contact.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
+import { PartyMenuModule } from './party-menu/party-menu.module';
+import { PartyMenu } from './entities/party-menu.entity';
+import { PartyMenuSection } from './entities/party-menu-section.entity';
+import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity';
 import { User } from './entities/user.entity';
 import { MenuItem } from './entities/menu-item.entity';
 import { MenuCategory } from './entities/menu-category.entity';
@@ -67,6 +71,9 @@ import { Announcement } from './entities/announcement.entity';
             Subscriber,
             ScheduledNotification,
             Announcement,
+            PartyMenu,
+            PartyMenuSection,
+            PartyMenuSectionItem,
           ],
           synchronize:
             configService.getOrThrow<string>('NODE_ENV') !== 'production',
@@ -92,6 +99,7 @@ import { Announcement } from './entities/announcement.entity';
     NewsletterModule,
     NotificationsModule,
     AnnouncementsModule,
+    PartyMenuModule,
   ],
   controllers: [AppController],
   providers: [AppService],
