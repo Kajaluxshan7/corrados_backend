@@ -6,8 +6,10 @@ import { getRequiredEnv } from '../config/env.validation';
 @Global()
 @Module({
   imports: [
-    JwtModule.register({
-      secret: getRequiredEnv('JWT_SECRET'),
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: getRequiredEnv('JWT_SECRET'),
+      }),
     }),
   ],
   providers: [AppWebSocketGateway],
