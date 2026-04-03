@@ -12,9 +12,9 @@ export class UploadService {
 
   constructor() {
     // Use environment variable or default to 'uploads' directory
-    this.uploadDir = getOptionalEnv('UPLOAD_DIR', 'uploads') || 'uploads';
+    this.uploadDir = getOptionalEnv('UPLOAD_DIR', 'uploads');
     // Base URL for accessing uploaded files (e.g., https://api.example.com)
-    this.baseUrl = getOptionalEnv('UPLOAD_BASE_URL', '') || '';
+    this.baseUrl = getOptionalEnv('UPLOAD_BASE_URL', '');
 
     // Ensure upload directory exists
     this.ensureUploadDir();
@@ -105,7 +105,13 @@ export class UploadService {
         ? this.uploadDir
         : path.join(process.cwd(), this.uploadDir);
 
-      const filePath = path.join(absoluteDir, cleanPath);
+      const filePath = path.resolve(absoluteDir, cleanPath);
+
+      // Prevent path traversal attacks
+      if (!filePath.startsWith(path.resolve(absoluteDir))) {
+        this.logger.warn(`Path traversal attempt blocked: ${cleanPath}`);
+        return;
+      }
 
       // Check if file exists before attempting deletion
       if (fs.existsSync(filePath)) {

@@ -45,6 +45,9 @@ export class PartyMenu {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
+  imageUrls: string[];
+
   @Column({ default: 0 })
   sortOrder: number;
 

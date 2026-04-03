@@ -5,6 +5,7 @@ import { OpeningHours, DayOfWeek } from '../entities/opening-hours.entity';
 import { CreateOpeningHoursDto } from './dto/create-opening-hours.dto';
 import { UpdateOpeningHoursDto } from './dto/update-opening-hours.dto';
 import moment from 'moment-timezone';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 // Toronto timezone for accurate open/close status
 const TIMEZONE = 'America/Toronto';
@@ -14,6 +15,7 @@ export class OpeningHoursService {
   constructor(
     @InjectRepository(OpeningHours)
     private openingHoursRepository: Repository<OpeningHours>,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   private readonly dayOrder: DayOfWeek[] = [
@@ -42,7 +44,9 @@ export class OpeningHoursService {
       ...data,
       dayOfWeek: createOpeningHoursDto.dayOfWeek,
     });
-    return await this.openingHoursRepository.save(openingHours);
+    const saved = await this.openingHoursRepository.save(openingHours);
+    this.wsGateway.emitToAll(WsEvent.OPENING_HOURS_UPDATED, saved);
+    return saved;
   }
 
   async findAll(): Promise<OpeningHours[]> {
@@ -86,7 +90,9 @@ export class OpeningHoursService {
 
     Object.assign(openingHours, data);
 
-    return await this.openingHoursRepository.save(openingHours);
+    const saved = await this.openingHoursRepository.save(openingHours);
+    this.wsGateway.emitToAll(WsEvent.OPENING_HOURS_UPDATED, saved);
+    return saved;
   }
 
   async remove(id: string): Promise<void> {

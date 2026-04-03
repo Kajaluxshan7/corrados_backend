@@ -39,8 +39,8 @@ export class AuthController {
     const isProduction = getRequiredEnv('NODE_ENV') === 'production';
     res.cookie('access_token', result.access_token, {
       httpOnly: true,
-      secure: false, // Set to true only when using HTTPS with proper domain
-      sameSite: 'lax', // Use 'lax' for cross-origin compatibility
+      secure: isProduction,
+      sameSite: 'lax',
       maxAge: cookieMaxAge,
       path: '/',
     });
@@ -54,9 +54,10 @@ export class AuthController {
 
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
+    const isProduction = getRequiredEnv('NODE_ENV') === 'production';
     res.clearCookie('access_token', {
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
     });

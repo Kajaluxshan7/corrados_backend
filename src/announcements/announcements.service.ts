@@ -16,6 +16,7 @@ import {
 import { Subscriber } from '../entities/subscriber.entity';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
 import { getRequiredEnv, getOptionalEnv } from '../config/env.validation';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class AnnouncementsService {
@@ -31,6 +32,7 @@ export class AnnouncementsService {
     private announcementRepository: Repository<Announcement>,
     @InjectRepository(Subscriber)
     private subscriberRepository: Repository<Subscriber>,
+    private wsGateway: AppWebSocketGateway,
   ) {
     const host =
       getOptionalEnv('EMAIL_EVENTS_HOST') || getRequiredEnv('EMAIL_HOST');
@@ -87,7 +89,12 @@ export class AnnouncementsService {
       ...dto,
       status: AnnouncementStatus.DRAFT,
     });
-    return this.announcementRepository.save(announcement);
+    const saved = await this.announcementRepository.save(announcement);
+    this.wsGateway.emitToAdmins(WsEvent.ANNOUNCEMENT_CREATED, saved);
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, {
+      type: 'announcements',
+    });
+    return saved;
   }
 
   async findAll(): Promise<Announcement[]> {
@@ -112,12 +119,18 @@ export class AnnouncementsService {
       throw new BadRequestException('Cannot edit an already sent announcement');
     }
     Object.assign(announcement, dto);
-    return this.announcementRepository.save(announcement);
+    const saved = await this.announcementRepository.save(announcement);
+    this.wsGateway.emitToAdmins(WsEvent.ANNOUNCEMENT_UPDATED, saved);
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
     const announcement = await this.findOne(id);
     await this.announcementRepository.remove(announcement);
+    this.wsGateway.emitToAdmins(WsEvent.ANNOUNCEMENT_DELETED, { id });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, {
+      type: 'announcements',
+    });
   }
 
   async getStats(): Promise<{
@@ -407,8 +420,8 @@ export class AnnouncementsService {
           <tr>
             <td align="center" style="background-color: #FFFCF8; padding: 36px 32px 28px; border-bottom: 1px solid rgba(42,21,9,0.06);">
               <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
-              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2A1509; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">COrrado\'s</p>
-              <p style="margin: 6px 0 0; font-size: 11px; color: ${opts.accentColor}; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;">&#9733;&ensp;Est. 2014&ensp;&#9733;</p>
+              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2A1509; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado\'s</p>
+              <p style="margin: 6px 0 0; font-size: 11px; color: ${opts.accentColor}; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;">&#9733;&ensp;Est. 2010&ensp;&#9733;</p>
             </td>
           </tr>
 
@@ -471,13 +484,14 @@ export class AnnouncementsService {
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding: 0 6px;">
-                          <a href="https://www.facebook.com/corradosrestaurant" style="display: inline-block; width: 30px; height: 30px; border-radius: 8px; background-color: rgba(42,21,9,0.06); text-align: center; line-height: 30px; font-size: 13px; color: #8B6914; text-decoration: none;" title="Facebook">f</a>
+                          <a href="https://www.facebook.com/people/Corrados-Restaurant/100064117086171/" style="display: inline-block; text-decoration: none;" title="Facebook">
+                            <img src="${this.backendPublicUrl}/uploads/assets/icon-facebook.svg" width="30" height="30" alt="Facebook" style="display: block; border: 0;" />
+                          </a>
                         </td>
                         <td style="padding: 0 6px;">
-                          <a href="https://www.instagram.com/corradosrestaurantngrill/" style="display: inline-block; width: 30px; height: 30px; border-radius: 8px; background-color: rgba(42,21,9,0.06); text-align: center; line-height: 30px; font-size: 13px; color: #8B6914; text-decoration: none;" title="Instagram">&#9679;</a>
-                        </td>
-                        <td style="padding: 0 6px;">
-                          <a href="https://www.tiktok.com/@corradosrestaurantngrill" style="display: inline-block; width: 30px; height: 30px; border-radius: 8px; background-color: rgba(42,21,9,0.06); text-align: center; line-height: 30px; font-size: 13px; color: #8B6914; text-decoration: none;" title="TikTok">&#9835;</a>
+                          <a href="https://www.instagram.com/corrados.restaurant/" style="display: inline-block; text-decoration: none;" title="Instagram">
+                            <img src="${this.backendPublicUrl}/uploads/assets/icon-instagram.svg" width="30" height="30" alt="Instagram" style="display: block; border: 0;" />
+                          </a>
                         </td>
                       </tr>
                     </table>
@@ -492,11 +506,11 @@ export class AnnouncementsService {
                 <!-- Address & contact -->
                 <tr>
                   <td align="center" style="padding: 18px 0 14px;">
-                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #6A3A1E; letter-spacing: 0.3px;">Corrado\'s Restaurant &amp; Grill</p>
-                    <p style="margin: 0 0 2px; font-size: 12px; color: rgba(42,21,9,0.45);">15 Baldwin St, Whitby, ON L1M 1A2</p>
+                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #6A3A1E; letter-spacing: 0.3px;">Corrado\'s Restaurant &amp; Bar</p>
+                    <p style="margin: 0 0 2px; font-size: 12px; color: rgba(42,21,9,0.45);">38 Baldwin Street, Whitby, ON L1M 1A2</p>
                     <p style="margin: 0; font-size: 12px; color: rgba(42,21,9,0.45);">
-                      <a href="tel:+19054253055" style="color: rgba(42,21,9,0.45); text-decoration: none;">(905) 425-3055</a>&ensp;&#183;&ensp;
-                      <a href="mailto:corradosrestaurant@gmail.com" style="color: rgba(42,21,9,0.45); text-decoration: none;">corradosrestaurant@gmail.com</a>
+                      <a href="tel:+19056553100" style="color: rgba(42,21,9,0.45); text-decoration: none;">(905) 655-3100</a>&ensp;&#183;&ensp;
+                      <a href="mailto:corradosrestaurant@rogers.com" style="color: rgba(42,21,9,0.45); text-decoration: none;">corradosrestaurant@rogers.com</a>
                     </p>
                   </td>
                 </tr>

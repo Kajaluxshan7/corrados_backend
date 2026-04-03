@@ -17,7 +17,7 @@ export class Story {
   @Column('uuid')
   categoryId: string;
 
-  @Column('simple-array', { default: '' })
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   imageUrls: string[];
 
   @Column({ default: true })

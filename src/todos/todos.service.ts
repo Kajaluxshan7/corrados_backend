@@ -11,6 +11,7 @@ import { Todo, TodoStatus, TodoPriority } from '../entities/todo.entity';
 import { User } from '../entities/user.entity';
 import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class TodosService {
@@ -20,6 +21,7 @@ export class TodosService {
     private todoRepository: Repository<Todo>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   async create(createTodoDto: CreateTodoDto, userId: string): Promise<Todo> {
@@ -76,7 +78,10 @@ export class TodosService {
     try {
       // Log the todo object we are about to save for debugging
       this.logger.debug('Saving todo to DB:', todo as any);
-      return await this.todoRepository.save(todo);
+      const saved = await this.todoRepository.save(todo);
+      this.wsGateway.emitToAdmins(WsEvent.TODO_CREATED, saved);
+      this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'todos' });
+      return saved;
     } catch (err) {
       // Log the underlying error and throw a clearer exception
       this.logger.error('Error saving todo:', err as any);
@@ -126,12 +131,16 @@ export class TodosService {
       dueDate: updateTodoDto.dueDate,
     });
 
-    return await this.todoRepository.save(todo);
+    const saved = await this.todoRepository.save(todo);
+    this.wsGateway.emitToAdmins(WsEvent.TODO_UPDATED, saved);
+    return saved;
   }
 
   async remove(id: string): Promise<void> {
     const todo = await this.findOne(id);
     await this.todoRepository.remove(todo);
+    this.wsGateway.emitToAdmins(WsEvent.TODO_DELETED, { id });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'todos' });
   }
 
   async toggleComplete(id: string): Promise<Todo> {
@@ -146,7 +155,9 @@ export class TodosService {
         : TodoStatus.COMPLETED;
     todo.completedAt = todo.status === TodoStatus.COMPLETED ? new Date() : null;
 
-    return this.todoRepository.save(todo);
+    const saved = await this.todoRepository.save(todo);
+    this.wsGateway.emitToAdmins(WsEvent.TODO_UPDATED, saved);
+    return saved;
   }
 
   async getStats() {

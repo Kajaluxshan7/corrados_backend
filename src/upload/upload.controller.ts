@@ -37,25 +37,34 @@ export class UploadController {
       }
     }
 
-    // Validate file type
+    // Validate file type (MIME + extension)
     const allowedMimeTypes = [
       'image/jpeg',
       'image/png',
       'image/jpg',
       'image/webp',
     ];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
     for (const file of files) {
       if (!allowedMimeTypes.includes(file.mimetype)) {
         throw new BadRequestException(
           `File ${file.originalname} is not a supported image format`,
         );
       }
+      const ext = file.originalname.toLowerCase().split('.').pop();
+      if (!ext || !allowedExtensions.includes(`.${ext}`)) {
+        throw new BadRequestException(
+          `File ${file.originalname} has an unsupported file extension`,
+        );
+      }
     }
 
     try {
+      // Sanitize folder name to prevent path traversal
+      const safeFolder = (folder || 'general').replace(/[^a-zA-Z0-9_-]/g, '_');
       const uploadedUrls = await this.uploadService.uploadMultipleFiles(
         files,
-        folder || 'general',
+        safeFolder,
       );
       return {
         success: true,

@@ -26,10 +26,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const httpEx: HttpException = exception;
       status = httpEx.getStatus();
       const resp = httpEx.getResponse() as any;
-      message = resp?.message || httpEx.message;
+      // ValidationPipe returns resp.message as a string[] — join for display
+      const raw = resp?.message ?? httpEx.message;
+      message = Array.isArray(raw) ? raw.join('; ') : String(raw);
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
-      message = 'Internal server error';
+      // Never expose raw system/SMTP errors to the client
+      message = 'An unexpected error occurred. Please try again later.';
     }
 
     // Log the error with ID and request context

@@ -5,6 +5,8 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { AppModule } from './app.module';
 import { AuthService } from './auth/auth.service';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import compression from 'compression';
 import {
   validateEnvironment,
   getRequiredEnv,
@@ -29,8 +31,22 @@ async function bootstrap() {
         : ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
+  // Enable graceful shutdown hooks
+  app.enableShutdownHooks();
+
+  // Security middleware - helmet for HTTP headers
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' }, // Allow serving uploaded images cross-origin
+      contentSecurityPolicy: false, // Disabled - let frontend handle CSP
+    }),
+  );
+
+  // Response compression for better performance
+  app.use(compression());
+
   // Configure static file serving for uploads
-  const uploadDir = getOptionalEnv('UPLOAD_DIR', 'uploads') || 'uploads';
+  const uploadDir = getOptionalEnv('UPLOAD_DIR', 'uploads');
   const absoluteUploadDir = path.isAbsolute(uploadDir)
     ? uploadDir
     : path.join(process.cwd(), uploadDir);
@@ -78,25 +94,14 @@ async function bootstrap() {
   // Global exception filter to standardize error responses and log unique error IDs
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  // Security headers
-  app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-    if (getRequiredEnv('NODE_ENV') === 'production') {
-      res.setHeader(
-        'Strict-Transport-Security',
-        'max-age=31536000; includeSubDomains',
-      );
-    }
-    next();
-  });
-
   // Create super admin on startup
   const authService = app.get(AuthService);
   await authService.createSuperAdmin();
 
   const port = parseInt(getRequiredEnv('PORT'), 10);
+  if (isNaN(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid PORT value: must be between 1 and 65535`);
+  }
   const host = getRequiredEnv('HOST');
   await app.listen(port, host);
   Logger.log(`🚀 Application is running on port: ${port}`);

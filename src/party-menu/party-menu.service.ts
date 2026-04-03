@@ -14,6 +14,7 @@ import {
   UpdatePartySectionDto,
   UpdateSectionItemDto,
 } from './dto/update-party-menu.dto';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class PartyMenuService {
@@ -26,6 +27,7 @@ export class PartyMenuService {
     private sectionRepository: Repository<PartyMenuSection>,
     @InjectRepository(PartyMenuSectionItem)
     private itemRepository: Repository<PartyMenuSectionItem>,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   // ─── Party Menu CRUD ────────────────────────────────────────────────────────
@@ -60,19 +62,24 @@ export class PartyMenuService {
       await this.createSectionsBulk(saved.id, sections);
     }
 
-    return this.findOne(saved.id);
+    const result = await this.findOne(saved.id);
+    this.wsGateway.emitToAll(WsEvent.PARTY_MENU_UPDATED, { action: 'created' });
+    return result;
   }
 
   async update(id: string, dto: UpdatePartyMenuDto): Promise<PartyMenu> {
     await this.findOne(id);
     const { sections: _sections, ...menuData } = dto;
     await this.partyMenuRepository.update(id, menuData);
-    return this.findOne(id);
+    const updated = await this.findOne(id);
+    this.wsGateway.emitToAll(WsEvent.PARTY_MENU_UPDATED, { action: 'updated' });
+    return updated;
   }
 
   async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.partyMenuRepository.delete(id);
+    this.wsGateway.emitToAll(WsEvent.PARTY_MENU_UPDATED, { action: 'deleted' });
   }
 
   async reorder(id: string, sortOrder: number): Promise<PartyMenu> {

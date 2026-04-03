@@ -10,6 +10,7 @@ import {
 import { Special } from '../entities/special.entity';
 import { Event } from '../entities/event.entity';
 import { NewsletterService } from '../newsletter/newsletter.service';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class NotificationSchedulerService {
@@ -23,6 +24,7 @@ export class NotificationSchedulerService {
     @InjectRepository(Event)
     private eventRepo: Repository<Event>,
     private newsletterService: NewsletterService,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   /**
@@ -60,6 +62,12 @@ export class NotificationSchedulerService {
       }
       await this.notificationRepo.save(notification);
     }
+
+    // Notify admin dashboard about processed notifications
+    this.wsGateway.emitToAdmins(WsEvent.NOTIFICATION_SENT, {
+      processed: dueNotifications.length,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   /**

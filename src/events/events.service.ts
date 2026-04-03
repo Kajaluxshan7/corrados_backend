@@ -7,6 +7,7 @@ import { UpdateEventDto } from './dto/update-event.dto';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { NotificationSchedulerService } from '../notifications/notification-scheduler.service';
 import { NotificationType } from '../entities/scheduled-notification.entity';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class EventsService {
@@ -17,6 +18,7 @@ export class EventsService {
     private eventRepository: Repository<Event>,
     private newsletterService: NewsletterService,
     private notificationScheduler: NotificationSchedulerService,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
@@ -34,6 +36,10 @@ export class EventsService {
       ticketLink: createEventDto.ticketLink || null,
     });
     const savedEvent = await this.eventRepository.save(event);
+
+    // Emit real-time update
+    this.wsGateway.emitToAll(WsEvent.EVENT_CREATED, savedEvent);
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'events' });
 
     // Notify subscribers - schedule for displayStartDate or send immediately
     if (savedEvent.isActive) {
@@ -100,7 +106,9 @@ export class EventsService {
 
     Object.assign(event, updateEventDto);
 
-    return await this.eventRepository.save(event);
+    const updated = await this.eventRepository.save(event);
+    this.wsGateway.emitToAll(WsEvent.EVENT_UPDATED, updated);
+    return updated;
   }
 
   async remove(id: string): Promise<void> {
@@ -113,5 +121,7 @@ export class EventsService {
     );
 
     await this.eventRepository.remove(event);
+    this.wsGateway.emitToAll(WsEvent.EVENT_DELETED, { id });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'events' });
   }
 }

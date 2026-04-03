@@ -6,14 +6,20 @@ import { User } from './entities/user.entity';
 import { MenuItem } from './entities/menu-item.entity';
 import { MenuCategory } from './entities/menu-category.entity';
 import { MenuItemMeasurement } from './entities/menu-item-measurement.entity';
+import { MeasurementType } from './entities/measurement-type.entity';
 import { PrimaryCategory } from './entities/primary-category.entity';
 import { Special } from './entities/special.entity';
 import { Event } from './entities/event.entity';
 import { OpeningHours } from './entities/opening-hours.entity';
 import { Todo } from './entities/todo.entity';
+import { Story } from './entities/story.entity';
+import { StoryCategory } from './entities/story-category.entity';
 import { Subscriber } from './entities/subscriber.entity';
 import { ScheduledNotification } from './entities/scheduled-notification.entity';
 import { Announcement } from './entities/announcement.entity';
+import { PartyMenu } from './entities/party-menu.entity';
+import { PartyMenuSection } from './entities/party-menu-section.entity';
+import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity';
 
 config();
 
@@ -47,16 +53,21 @@ export const AppDataSource = new DataSource({
     User,
     MenuItem,
     MenuCategory,
+    MenuItemMeasurement,
+    MeasurementType,
     PrimaryCategory,
     Special,
     Event,
     OpeningHours,
     Todo,
+    Story,
+    StoryCategory,
     Subscriber,
     ScheduledNotification,
     Announcement,
-    MenuItemMeasurement,
-    'src/entities/**/*.entity.ts',
+    PartyMenu,
+    PartyMenuSection,
+    PartyMenuSectionItem,
   ],
   migrations: ['src/migrations/**/*.ts'],
   synchronize: false, // We'll use migrations instead

@@ -202,6 +202,8 @@ export function getRequiredEnv(key: keyof EnvConfig): string {
 /**
  * Get environment variable with optional fallback
  */
+export function getOptionalEnv(key: keyof EnvConfig, fallback: string): string;
+export function getOptionalEnv(key: keyof EnvConfig): string | undefined;
 export function getOptionalEnv(
   key: keyof EnvConfig,
   fallback?: string,

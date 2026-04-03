@@ -1,6 +1,6 @@
 ﻿import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { MenuCategory } from '../entities/menu-category.entity';
 import { MenuItem } from '../entities/menu-item.entity';
 import { MenuItemMeasurement } from '../entities/menu-item-measurement.entity';
@@ -12,6 +12,7 @@ import { UpdateMenuItemDto } from './dto/update-menu-item.dto';
 import { CreatePrimaryCategoryDto } from './dto/create-primary-category.dto';
 import { UpdatePrimaryCategoryDto } from './dto/update-primary-category.dto';
 import { UploadService } from '../upload/upload.service';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class MenuService {
@@ -26,6 +27,8 @@ export class MenuService {
     @InjectRepository(PrimaryCategory)
     private primaryCategoryRepository: Repository<PrimaryCategory>,
     private uploadService: UploadService,
+    private dataSource: DataSource,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   // Primary Category methods
@@ -53,7 +56,11 @@ export class MenuService {
     const primaryCategory = this.primaryCategoryRepository.create(
       createPrimaryCategoryDto,
     );
-    return this.primaryCategoryRepository.save(primaryCategory);
+    const saved = await this.primaryCategoryRepository.save(primaryCategory);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'primaryCategory:created',
+    });
+    return saved;
   }
 
   async updatePrimaryCategory(
@@ -61,49 +68,71 @@ export class MenuService {
     updatePrimaryCategoryDto: UpdatePrimaryCategoryDto,
   ): Promise<PrimaryCategory> {
     await this.primaryCategoryRepository.update(id, updatePrimaryCategoryDto);
-    return this.findPrimaryCategoryById(id);
+    const updated = await this.findPrimaryCategoryById(id);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'primaryCategory:updated',
+    });
+    return updated;
   }
 
   async removePrimaryCategory(id: string): Promise<void> {
     await this.primaryCategoryRepository.delete(id);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'primaryCategory:deleted',
+    });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'menu' });
   }
 
   async movePrimaryCategoryOrder(
     primaryCategoryId: string,
     direction: 'up' | 'down',
   ): Promise<PrimaryCategory> {
-    const primaryCategory =
-      await this.findPrimaryCategoryById(primaryCategoryId);
-    const currentOrder = primaryCategory.sortOrder;
+    return this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(PrimaryCategory);
+      const primaryCategory = await repo.findOne({
+        where: { id: primaryCategoryId },
+      });
+      if (!primaryCategory)
+        throw new NotFoundException('Primary category not found');
 
-    if (direction === 'up' && currentOrder > 0) {
-      const previousPrimaryCategory =
-        await this.primaryCategoryRepository.findOne({
+      const currentOrder = primaryCategory.sortOrder;
+
+      if (direction === 'up' && currentOrder > 0) {
+        const previousPrimaryCategory = await repo.findOne({
           where: { sortOrder: currentOrder - 1 },
         });
 
-      if (previousPrimaryCategory) {
-        previousPrimaryCategory.sortOrder = currentOrder;
-        primaryCategory.sortOrder = currentOrder - 1;
+        if (previousPrimaryCategory) {
+          previousPrimaryCategory.sortOrder = currentOrder;
+          primaryCategory.sortOrder = currentOrder - 1;
 
-        await this.primaryCategoryRepository.save(previousPrimaryCategory);
-        return this.primaryCategoryRepository.save(primaryCategory);
+          await repo.save(previousPrimaryCategory);
+          const saved = await repo.save(primaryCategory);
+          this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+            action: 'primaryCategory:reordered',
+          });
+          return saved;
+        }
+      } else if (direction === 'down') {
+        const nextPrimaryCategory = await repo.findOne({
+          where: { sortOrder: currentOrder + 1 },
+        });
+
+        if (nextPrimaryCategory) {
+          nextPrimaryCategory.sortOrder = currentOrder;
+          primaryCategory.sortOrder = currentOrder + 1;
+
+          await repo.save(nextPrimaryCategory);
+          const saved = await repo.save(primaryCategory);
+          this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+            action: 'primaryCategory:reordered',
+          });
+          return saved;
+        }
       }
-    } else if (direction === 'down') {
-      const nextPrimaryCategory = await this.primaryCategoryRepository.findOne({
-        where: { sortOrder: currentOrder + 1 },
-      });
 
-      if (nextPrimaryCategory) {
-        nextPrimaryCategory.sortOrder = currentOrder;
-        primaryCategory.sortOrder = currentOrder + 1;
-
-        await this.primaryCategoryRepository.save(nextPrimaryCategory);
-        return this.primaryCategoryRepository.save(primaryCategory);
-      }
-    }
-
-    return primaryCategory;
+      return primaryCategory;
+    });
   }
 
   // Category methods
@@ -129,7 +158,11 @@ export class MenuService {
     createCategoryDto: CreateCategoryDto,
   ): Promise<MenuCategory> {
     const category = this.categoryRepository.create(createCategoryDto);
-    return this.categoryRepository.save(category);
+    const saved = await this.categoryRepository.save(category);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'category:created',
+    });
+    return saved;
   }
 
   async updateCategory(
@@ -137,11 +170,19 @@ export class MenuService {
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<MenuCategory> {
     await this.categoryRepository.update(id, updateCategoryDto);
-    return this.findCategoryById(id);
+    const updated = await this.findCategoryById(id);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'category:updated',
+    });
+    return updated;
   }
 
   async removeCategory(id: string): Promise<void> {
     await this.categoryRepository.delete(id);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'category:deleted',
+    });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'menu' });
   }
 
   async reorderCategory(
@@ -176,7 +217,11 @@ export class MenuService {
     }
 
     category.sortOrder = newOrder;
-    return this.categoryRepository.save(category);
+    const saved = await this.categoryRepository.save(category);
+    this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+      action: 'category:reordered',
+    });
+    return saved;
   }
 
   async moveCategoryOrder(
@@ -198,7 +243,11 @@ export class MenuService {
         category.sortOrder = currentOrder - 1;
 
         await this.categoryRepository.save(previousCategory);
-        return this.categoryRepository.save(category);
+        const saved = await this.categoryRepository.save(category);
+        this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+          action: 'category:reordered',
+        });
+        return saved;
       }
     } else if (direction === 'down') {
       // Find the category with the next order
@@ -212,7 +261,11 @@ export class MenuService {
         category.sortOrder = currentOrder + 1;
 
         await this.categoryRepository.save(nextCategory);
-        return this.categoryRepository.save(category);
+        const saved = await this.categoryRepository.save(category);
+        this.wsGateway.emitToAll(WsEvent.MENU_UPDATED, {
+          action: 'category:reordered',
+        });
+        return saved;
       }
     }
 
@@ -275,7 +328,10 @@ export class MenuService {
       await this.measurementRepository.save(measurementEntities);
     }
 
-    return this.findMenuItemById(savedMenuItem.id);
+    const result = await this.findMenuItemById(savedMenuItem.id);
+    this.wsGateway.emitToAll(WsEvent.MENU_ITEM_CREATED, result);
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'menu' });
+    return result;
   }
 
   async updateMenuItem(
@@ -305,7 +361,9 @@ export class MenuService {
       }
     }
 
-    return this.findMenuItemById(id);
+    const result = await this.findMenuItemById(id);
+    this.wsGateway.emitToAll(WsEvent.MENU_ITEM_UPDATED, result);
+    return result;
   }
 
   async removeMenuItem(id: string): Promise<void> {
@@ -323,6 +381,8 @@ export class MenuService {
     }
 
     await this.menuItemRepository.delete(id);
+    this.wsGateway.emitToAll(WsEvent.MENU_ITEM_DELETED, { id });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, { type: 'menu' });
   }
 
   async reorderMenuItem(itemId: string, newOrder: number): Promise<MenuItem> {

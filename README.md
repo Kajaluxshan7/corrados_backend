@@ -40,7 +40,7 @@ EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
 EMAIL_USER=mailer@example.com
 EMAIL_PASS=supersecret
-EMAIL_FROM="Brooklin Pub" <no-reply@brooklinpub.com>
+EMAIL_FROM="Corrado's Restaurant" <no-reply@corradosrestaurant.com>
 ADMIN_FRONTEND_URL=http://localhost:3000
 PASSWORD_RESET_PATH=/auth/reset-password
 ```

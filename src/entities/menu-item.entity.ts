@@ -39,10 +39,10 @@ export class MenuItem {
   @Column({ nullable: true })
   preparationTime: number; // in minutes
 
-  @Column('simple-array', { nullable: true })
+  @Column('text', { array: true, nullable: true, default: () => 'ARRAY[]::text[]' })
   allergens: string[]; // ['gluten', 'dairy', 'nuts']
 
-  @Column('simple-array', { nullable: true })
+  @Column('text', { array: true, nullable: true, default: () => 'ARRAY[]::text[]' })
   dietaryInfo: string[]; // ['vegetarian', 'vegan', 'gluten-free']
 
   @Column({ default: true })

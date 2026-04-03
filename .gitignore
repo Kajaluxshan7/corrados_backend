@@ -230,6 +230,7 @@ uploads/events
 uploads/menu
 uploads/specials
 uploads/stories
+uploads/party-menu
 *.pem
 *.key
 *.crt

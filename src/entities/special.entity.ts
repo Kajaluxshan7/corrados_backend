@@ -81,7 +81,7 @@ export class Special {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column('text', { array: true, default: '{}' })
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   imageUrls: string[];
 
   @Column({ default: 0 })

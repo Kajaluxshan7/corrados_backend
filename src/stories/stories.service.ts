@@ -8,6 +8,7 @@ import { UpdateStoryDto } from './dto/update-story.dto';
 import { CreateStoryCategoryDto } from './dto/create-story-category.dto';
 import { UpdateStoryCategoryDto } from './dto/update-story-category.dto';
 import { UploadService } from '../upload/upload.service';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class StoriesService {
@@ -18,6 +19,7 @@ export class StoriesService {
     @InjectRepository(StoryCategory)
     private storyCategoryRepository: Repository<StoryCategory>,
     private uploadService: UploadService,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   // Story Category Methods
@@ -43,7 +45,11 @@ export class StoriesService {
     createCategoryDto: CreateStoryCategoryDto,
   ): Promise<StoryCategory> {
     const category = this.storyCategoryRepository.create(createCategoryDto);
-    return this.storyCategoryRepository.save(category);
+    const saved = await this.storyCategoryRepository.save(category);
+    this.wsGateway.emitToAdmins(WsEvent.STORY_UPDATED, {
+      action: 'category:created',
+    });
+    return saved;
   }
 
   async updateCategory(
@@ -74,6 +80,9 @@ export class StoriesService {
     }
 
     await this.storyCategoryRepository.delete(id);
+    this.wsGateway.emitToAdmins(WsEvent.STORY_UPDATED, {
+      action: 'category:deleted',
+    });
   }
 
   async toggleCategoryStatus(id: string): Promise<StoryCategory> {
@@ -155,7 +164,11 @@ export class StoriesService {
 
   async createStory(createStoryDto: CreateStoryDto): Promise<Story> {
     const story = this.storyRepository.create(createStoryDto);
-    return this.storyRepository.save(story);
+    const saved = await this.storyRepository.save(story);
+    this.wsGateway.emitToAdmins(WsEvent.STORY_UPDATED, {
+      action: 'story:created',
+    });
+    return saved;
   }
 
   async updateStory(
@@ -184,6 +197,9 @@ export class StoriesService {
     }
 
     await this.storyRepository.delete(id);
+    this.wsGateway.emitToAdmins(WsEvent.STORY_UPDATED, {
+      action: 'story:deleted',
+    });
   }
 
   async toggleStoryStatus(id: string): Promise<Story> {

@@ -8,6 +8,7 @@ import { UploadService } from '../upload/upload.service';
 import { NewsletterService } from '../newsletter/newsletter.service';
 import { NotificationSchedulerService } from '../notifications/notification-scheduler.service';
 import { NotificationType } from '../entities/scheduled-notification.entity';
+import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
 @Injectable()
 export class SpecialsService {
@@ -18,6 +19,7 @@ export class SpecialsService {
     private uploadService: UploadService,
     private newsletterService: NewsletterService,
     private notificationScheduler: NotificationSchedulerService,
+    private wsGateway: AppWebSocketGateway,
   ) {}
 
   async findAll(): Promise<Special[]> {
@@ -47,6 +49,12 @@ export class SpecialsService {
     const special = this.specialRepository.create(createSpecialDto);
     const savedSpecial = await this.specialRepository.save(special);
 
+    // Emit real-time update
+    this.wsGateway.emitToAll(WsEvent.SPECIAL_CREATED, savedSpecial);
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, {
+      type: 'specials',
+    });
+
     // Notify subscribers - schedule for displayStartDate or send immediately
     if (savedSpecial.isActive) {
       const sendNow =
@@ -73,7 +81,9 @@ export class SpecialsService {
     updateSpecialDto: UpdateSpecialDto,
   ): Promise<Special> {
     await this.specialRepository.update(id, updateSpecialDto);
-    return this.findById(id);
+    const updated = await this.findById(id);
+    this.wsGateway.emitToAll(WsEvent.SPECIAL_UPDATED, updated);
+    return updated;
   }
 
   async remove(id: string): Promise<void> {
@@ -100,11 +110,17 @@ export class SpecialsService {
     }
 
     await this.specialRepository.delete(id);
+    this.wsGateway.emitToAll(WsEvent.SPECIAL_DELETED, { id });
+    this.wsGateway.emitToAdmins(WsEvent.DASHBOARD_REFRESH, {
+      type: 'specials',
+    });
   }
 
   async toggleStatus(id: string): Promise<Special> {
     const special = await this.findById(id);
     special.isActive = !special.isActive;
-    return this.specialRepository.save(special);
+    const updated = await this.specialRepository.save(special);
+    this.wsGateway.emitToAll(WsEvent.SPECIAL_UPDATED, updated);
+    return updated;
   }
 }

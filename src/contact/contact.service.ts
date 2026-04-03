@@ -1,8 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { getRequiredEnv, getOptionalEnv } from '../config/env.validation';
 import { CreateContactDto } from './dto';
-
+import { Attachment } from 'nodemailer/lib/mailer';
 // Subject labels for better readability
 const subjectLabels: Record<string, string> = {
   general: 'General Inquiry',
@@ -125,40 +129,17 @@ export class ContactService {
    * Verify SMTP transporters (non-blocking, for logging purposes)
    */
   private async verifyTransporters(): Promise<void> {
-    // Verify primary transporter
+    // Verify primary transporter — verification failure does NOT mean sending
+    // will fail (Gmail app-passwords routinely fail verify() but send fine).
+    // Never swap to Ethereal: that silently swallows real emails.
     try {
       await this.primaryTransporter.verify();
       this.logger.log('Primary SMTP transporter verified');
     } catch (err) {
-      this.logger.warn('Primary SMTP transporter could not be verified', err);
-      if (getRequiredEnv('NODE_ENV') !== 'production') {
-        this.logger.log(
-          'Falling back to Ethereal test account for development',
-        );
-        try {
-          const testAccount = await nodemailer.createTestAccount();
-          this.primaryTransporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            secure: false,
-            auth: {
-              user: testAccount.user,
-              pass: testAccount.pass,
-            },
-          });
-          this.logger.log(`Ethereal account user: ${testAccount.user}`);
-        } catch (etherealErr) {
-          this.logger.error(
-            'Failed to create Ethereal test account',
-            etherealErr,
-          );
-        }
-      } else {
-        this.logger.error(
-          'Primary SMTP transporter verification failed in production',
-          err,
-        );
-      }
+      this.logger.warn(
+        'Primary SMTP transporter verify() failed — will still attempt to send (this is normal for Gmail app-passwords)',
+        err,
+      );
     }
 
     // Verify events transporter if configured
@@ -246,7 +227,9 @@ export class ContactService {
       };
     } catch (error) {
       this.logger.error('Failed to process contact form:', error);
-      throw error;
+      throw new InternalServerErrorException(
+        'We could not send your message right now. Please try again in a few minutes, or contact us directly by phone or email.',
+      );
     }
   }
 
@@ -255,14 +238,19 @@ export class ContactService {
    */
   private getEmailHeader(subtitle: string): string {
     return `
-          <!-- Header with Logo -->
+          <!-- Header - warm cream with branding -->
           <tr>
-            <td style="background: linear-gradient(135deg, #3C1F0E 0%, #5A2E18 50%, #6A3A1E 100%); padding: 40px 30px; text-align: center;">
-              <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" style="max-width: 180px; height: auto; margin-bottom: 15px;" />
-              <p style="color: rgba(255,255,255,0.85); margin: 0; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; font-weight: 500;">
+            <td align="center" style="background-color: #FFFCF8; padding: 36px 32px 28px; border-bottom: 1px solid rgba(42,21,9,0.06);">
+              <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
+              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2D2926; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado\'s</p>
+              <p style="margin: 6px 0 0; font-size: 11px; color: #BE5953; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;">
                 ${subtitle}
               </p>
             </td>
+          </tr>
+          <!-- Accent line -->
+          <tr>
+            <td style="height: 3px; background: linear-gradient(90deg, #FDF8F4, #BE5953, #C9A96E, #BE5953, #FDF8F4);"></td>
           </tr>
     `;
   }
@@ -274,22 +262,47 @@ export class ContactService {
     return `
           <!-- Footer -->
           <tr>
-            <td style="background: #3C1F0E; padding: 35px 30px; text-align: center;">
-              <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" style="max-width: 120px; height: auto; margin-bottom: 20px; opacity: 0.9;" />
-              <p style="color: rgba(255,255,255,0.7); margin: 0 0 15px 0; font-size: 13px; line-height: 1.6;">
-                15 Baldwin Street, Whitby, ON L1M 1A2<br>
-                (905) 425-3055
-              </p>
-              <p style="margin: 0 0 20px 0;">
-                <a href="https://facebook.com/corradosrestaurant" style="color: #D9A756; text-decoration: none; margin: 0 12px; font-size: 13px;">Facebook</a>
-                <span style="color: rgba(255,255,255,0.3);">|</span>
-                <a href="https://instagram.com/corradosrestaurant" style="color: #D9A756; text-decoration: none; margin: 0 12px; font-size: 13px;">Instagram</a>
-              </p>
-              <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 10px;">
-                <p style="color: rgba(255,255,255,0.5); margin: 0; font-size: 11px;">
-                  &copy; ${new Date().getFullYear()} Corrado's Restaurant. All rights reserved.
-                </p>
-              </div>
+            <td style="background-color: #F5EDE4; padding: 28px 36px; border-top: 1px solid rgba(45,41,38,0.06);">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding-bottom: 18px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 0 6px;">
+                          <a href="https://www.facebook.com/people/Corrados-Restaurant/100064117086171/" style="display: inline-block; text-decoration: none;" title="Facebook">
+                            <img src="${this.backendPublicUrl}/uploads/assets/icon-facebook.svg" width="30" height="30" alt="Facebook" style="display: block; border: 0;" />
+                          </a>
+                        </td>
+                        <td style="padding: 0 6px;">
+                          <a href="https://www.instagram.com/corrados.restaurant/" style="display: inline-block; text-decoration: none;" title="Instagram">
+                            <img src="${this.backendPublicUrl}/uploads/assets/icon-instagram.svg" width="30" height="30" alt="Instagram" style="display: block; border: 0;" />
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="height: 1px; background-color: rgba(45,41,38,0.08);"></td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding: 18px 0 14px;">
+                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #5C524D; letter-spacing: 0.3px;">Corrado\'s Restaurant &amp; Bar</p>
+                    <p style="margin: 0 0 2px; font-size: 12px; color: rgba(45,41,38,0.45);">38 Baldwin Street, Whitby, ON L1M 1A2</p>
+                    <p style="margin: 0; font-size: 12px; color: rgba(45,41,38,0.45);">
+                      <a href="tel:+19056553100" style="color: rgba(45,41,38,0.45); text-decoration: none;">(905) 655-3100</a>&ensp;&#183;&ensp;
+                      <a href="mailto:corradosrestaurant@rogers.com" style="color: rgba(45,41,38,0.45); text-decoration: none;">corradosrestaurant@rogers.com</a>
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 2px;">
+                    <p style="margin: 0; font-size: 11px; line-height: 1.6; color: rgba(45,41,38,0.3);">
+                      &copy; ${new Date().getFullYear()} Corrado's Restaurant &amp; Bar. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
     `;
@@ -301,17 +314,32 @@ export class ContactService {
   private getEmailWrapper(content: string): string {
     return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>Corrado\'s Restaurant</title>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <style>
+    body, table, td { margin: 0; padding: 0; }
+    body { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table { border-spacing: 0; border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; max-width: 100%; }
+    a { color: #BE5953; text-decoration: none; }
+    @media only screen and (max-width: 620px) {
+      .email-container { width: 100% !important; }
+      .content-pad { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #F5EBE0; font-family: 'Georgia', 'Times New Roman', serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #F5EBE0; padding: 30px 20px;">
+<body style="margin: 0; padding: 0; background-color: #FDF8F4; font-family: 'Segoe UI', -apple-system, Helvetica, Arial, sans-serif; word-spacing: normal;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #FDF8F4; padding: 40px 16px 48px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 4px 24px rgba(60,31,14,0.12);">
+        <table role="presentation" class="email-container" width="560" cellpadding="0" cellspacing="0" style="max-width: 560px; width: 100%; background-color: #ffffff; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 24px rgba(45,41,38,0.08);">
           ${content}
         </table>
       </td>
@@ -345,20 +373,20 @@ export class ContactService {
     let reservationDetailsHtml = '';
     if (isReservation) {
       reservationDetailsHtml = `
-        <div style="background: #FDF8F3; padding: 24px; border-radius: 4px; margin: 24px 0; border-left: 3px solid #D9A756;">
-          <h3 style="color: #3C1F0E; margin: 0 0 18px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Party Reservation Details</h3>
+        <div style="background: #FDF8F4; padding: 24px; border-radius: 4px; margin: 24px 0; border-left: 3px solid #BE5953;">
+          <h3 style="color: #2D2926; margin: 0 0 18px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Party Reservation Details</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; width: 140px; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Requested Date</td>
-              <td style="padding: 10px 0; color: #3C1F0E; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">${reservationDate || 'Not specified'}</td>
+              <td style="padding: 10px 0; color: #5C524D; font-weight: 600; width: 140px; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Requested Date</td>
+              <td style="padding: 10px 0; color: #2D2926; font-size: 14px; border-bottom: 1px solid #E8E0D8;">${reservationDate || 'Not specified'}</td>
             </tr>
             <tr>
-              <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Requested Time</td>
-              <td style="padding: 10px 0; color: #3C1F0E; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">${reservationTime || 'Not specified'}</td>
+              <td style="padding: 10px 0; color: #5C524D; font-weight: 600; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Requested Time</td>
+              <td style="padding: 10px 0; color: #2D2926; font-size: 14px; border-bottom: 1px solid #E8E0D8;">${reservationTime || 'Not specified'}</td>
             </tr>
             <tr>
-              <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; font-size: 14px;">Number of Guests</td>
-              <td style="padding: 10px 0; color: #3C1F0E; font-size: 14px;">${guestCount || 'Not specified'}</td>
+              <td style="padding: 10px 0; color: #5C524D; font-weight: 600; font-size: 14px;">Number of Guests</td>
+              <td style="padding: 10px 0; color: #2D2926; font-size: 14px;">${guestCount || 'Not specified'}</td>
             </tr>
           </table>
         </div>
@@ -371,21 +399,21 @@ export class ContactService {
       const cvAttachmentNote = cvFile
         ? `
             <tr>
-              <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; width: 140px; font-size: 14px;">CV/Resume</td>
-              <td style="padding: 10px 0; color: #3C1F0E; font-size: 14px;">
-                <span style="background: #4CAF50; color: #fff; padding: 4px 12px; border-radius: 3px; font-size: 12px; font-weight: 600;">📎 ${cvFile.originalname}</span>
+              <td style="padding: 10px 0; color: #5C524D; font-weight: 600; width: 140px; font-size: 14px;">CV/Resume</td>
+              <td style="padding: 10px 0; color: #2D2926; font-size: 14px;">
+                <span style="background: #2C5530; color: #fff; padding: 4px 12px; border-radius: 2px; font-size: 12px; font-weight: 600;">📎 ${cvFile.originalname}</span>
               </td>
             </tr>
           `
         : '';
 
       careersDetailsHtml = `
-        <div style="background: #FDF8F3; padding: 24px; border-radius: 4px; margin: 24px 0; border-left: 3px solid #D9A756;">
-          <h3 style="color: #3C1F0E; margin: 0 0 18px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Application Details</h3>
+        <div style="background: #FDF8F4; padding: 24px; border-radius: 4px; margin: 24px 0; border-left: 3px solid #BE5953;">
+          <h3 style="color: #2D2926; margin: 0 0 18px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Application Details</h3>
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
-              <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; width: 140px; font-size: 14px; ${cvFile ? 'border-bottom: 1px solid rgba(217,167,86,0.2);' : ''}">Position Applied</td>
-              <td style="padding: 10px 0; color: #3C1F0E; font-size: 14px; font-weight: 500; ${cvFile ? 'border-bottom: 1px solid rgba(217,167,86,0.2);' : ''}">${position || 'Not specified'}</td>
+              <td style="padding: 10px 0; color: #5C524D; font-weight: 600; width: 140px; font-size: 14px; ${cvFile ? 'border-bottom: 1px solid #E8E0D8;' : ''}">Position Applied</td>
+              <td style="padding: 10px 0; color: #2D2926; font-size: 14px; font-weight: 500; ${cvFile ? 'border-bottom: 1px solid #E8E0D8;' : ''}">${position || 'Not specified'}</td>
             </tr>
             ${cvAttachmentNote}
           </table>
@@ -438,26 +466,26 @@ Corrado\'s Restaurant Contact Form
 
           <!-- Content -->
           <tr>
-            <td style="padding: 40px 35px;">
+            <td class="content-pad" style="padding: 40px 35px;">
               <!-- Contact Info Card -->
-              <div style="background: #F9F6F2; padding: 24px; border-radius: 4px; margin-bottom: 24px;">
-                <h3 style="color: #3C1F0E; margin: 0 0 18px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">${isCareers ? 'Applicant' : 'Contact'} Information</h3>
+              <div style="background: #FDF8F4; padding: 24px; border-radius: 4px; margin-bottom: 24px;">
+                <h3 style="color: #2D2926; margin: 0 0 18px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">${isCareers ? 'Applicant' : 'Contact'} Information</h3>
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; width: 100px; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Name</td>
-                    <td style="padding: 10px 0; color: #3C1F0E; font-weight: 500; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">${name}</td>
+                    <td style="padding: 10px 0; color: #5C524D; font-weight: 600; width: 100px; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Name</td>
+                    <td style="padding: 10px 0; color: #2D2926; font-weight: 500; font-size: 14px; border-bottom: 1px solid #E8E0D8;">${name}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Email</td>
-                    <td style="padding: 10px 0; border-bottom: 1px solid rgba(217,167,86,0.2);"><a href="mailto:${email}" style="color: #B08030; text-decoration: none; font-size: 14px;">${email}</a></td>
+                    <td style="padding: 10px 0; color: #5C524D; font-weight: 600; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Email</td>
+                    <td style="padding: 10px 0; border-bottom: 1px solid #E8E0D8;"><a href="mailto:${email}" style="color: #BE5953; text-decoration: none; font-size: 14px;">${email}</a></td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Phone</td>
-                    <td style="padding: 10px 0; color: #3C1F0E; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">${phone ? `<a href="tel:${phone}" style="color: #B08030; text-decoration: none;">${phone}</a>` : '<span style="color: #8B7355;">Not provided</span>'}</td>
+                    <td style="padding: 10px 0; color: #5C524D; font-weight: 600; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Phone</td>
+                    <td style="padding: 10px 0; color: #2D2926; font-size: 14px; border-bottom: 1px solid #E8E0D8;">${phone ? `<a href="tel:${phone}" style="color: #BE5953; text-decoration: none;">${phone}</a>` : '<span style="color: #5C524D;">Not provided</span>'}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #6A3A1E; font-weight: 600; font-size: 14px;">Subject</td>
-                    <td style="padding: 10px 0;"><span style="background: #D9A756; color: #3C1F0E; padding: 4px 14px; border-radius: 3px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">${subjectLabel}</span></td>
+                    <td style="padding: 10px 0; color: #5C524D; font-weight: 600; font-size: 14px;">Subject</td>
+                    <td style="padding: 10px 0;"><span style="background: #BE5953; color: #ffffff; padding: 4px 14px; border-radius: 2px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">${subjectLabel}</span></td>
                   </tr>
                 </table>
               </div>
@@ -466,19 +494,19 @@ Corrado\'s Restaurant Contact Form
               ${careersDetailsHtml}
 
               <!-- Message Card -->
-              <div style="background: #FFFDFB; padding: 24px; border-radius: 4px; border: 1px solid rgba(217,167,86,0.25);">
-                <h3 style="color: #3C1F0E; margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Message</h3>
-                <p style="color: #4A2C17; line-height: 1.8; margin: 0; white-space: pre-wrap; font-size: 14px;">${message}</p>
+              <div style="background: #FFFCF8; padding: 24px; border-radius: 4px; border: 1px solid #E8E0D8;">
+                <h3 style="color: #2D2926; margin: 0 0 16px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Message</h3>
+                <p style="color: #5C524D; line-height: 1.8; margin: 0; white-space: pre-wrap; font-size: 14px;">${message}</p>
               </div>
 
               <!-- Quick Actions -->
               <div style="margin-top: 30px; text-align: center;">
-                <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subjectLabel)}" style="display: inline-block; background: #D9A756; color: #3C1F0E; padding: 14px 32px; border-radius: 3px; text-decoration: none; font-weight: 600; margin: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Reply via Email</a>
-                ${phone ? `<a href="tel:${phone}" style="display: inline-block; background: #3C1F0E; color: #fff; padding: 14px 32px; border-radius: 3px; text-decoration: none; font-weight: 600; margin: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Call ${name.split(' ')[0]}</a>` : ''}
+                <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subjectLabel)}" style="display: inline-block; background: #BE5953; color: #ffffff; padding: 14px 32px; border-radius: 2px; text-decoration: none; font-weight: 600; margin: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Reply via Email</a>
+                ${phone ? `<a href="tel:${phone}" style="display: inline-block; background: #2D2926; color: #ffffff; padding: 14px 32px; border-radius: 2px; text-decoration: none; font-weight: 600; margin: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Call ${name.split(' ')[0]}</a>` : ''}
               </div>
 
               <!-- Timestamp -->
-              <p style="color: #8B7355; margin: 30px 0 0 0; font-size: 12px; text-align: center; border-top: 1px solid rgba(217,167,86,0.2); padding-top: 20px;">
+              <p style="color: #5C524D; margin: 30px 0 0 0; font-size: 12px; text-align: center; border-top: 1px solid #E8E0D8; padding-top: 20px;">
                 Received on ${new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto', dateStyle: 'full', timeStyle: 'short' })}
               </p>
             </td>
@@ -488,7 +516,7 @@ Corrado\'s Restaurant Contact Form
     `);
 
     // Prepare attachments array if CV file is present
-    const attachments: nodemailer.Attachment[] = [];
+    const attachments: Attachment[] = [];
     if (cvFile) {
       attachments.push({
         filename: cvFile.originalname,
@@ -549,7 +577,9 @@ Corrado\'s Restaurant Contact Form
 
     if (failedEmails.length === recipientEmails.length) {
       // All emails failed
-      throw new Error('Failed to send notification email to any recipient');
+      throw new InternalServerErrorException(
+        'We could not send your message right now. Please try again in a few minutes, or contact us directly by phone or email.',
+      );
     }
 
     if (failedEmails.length > 0) {
@@ -584,23 +614,23 @@ Corrado\'s Restaurant Contact Form
     let reservationConfirmHtml = '';
     if (isReservation) {
       reservationConfirmHtml = `
-        <div style="background: #FDF8F3; padding: 28px; border-radius: 4px; margin: 28px 0; border: 1px dashed #D9A756;">
-          <h3 style="color: #3C1F0E; margin: 0 0 22px 0; font-size: 14px; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Your Reservation Request</h3>
+        <div style="background: #FDF8F4; padding: 28px; border-radius: 4px; margin: 28px 0; border: 1px dashed #BE5953;">
+          <h3 style="color: #2D2926; margin: 0 0 22px 0; font-size: 14px; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Your Reservation Request</h3>
           <table style="width: 100%; border-collapse: collapse; max-width: 320px; margin: 0 auto;">
             <tr>
-              <td style="padding: 12px 0; color: #6A3A1E; font-weight: 600; text-align: left; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Date</td>
-              <td style="padding: 12px 0; color: #3C1F0E; font-weight: 500; text-align: right; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">${reservationDate || 'To be confirmed'}</td>
+              <td style="padding: 12px 0; color: #5C524D; font-weight: 600; text-align: left; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Date</td>
+              <td style="padding: 12px 0; color: #2D2926; font-weight: 500; text-align: right; font-size: 14px; border-bottom: 1px solid #E8E0D8;">${reservationDate || 'To be confirmed'}</td>
             </tr>
             <tr>
-              <td style="padding: 12px 0; color: #6A3A1E; font-weight: 600; text-align: left; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">Time</td>
-              <td style="padding: 12px 0; color: #3C1F0E; font-weight: 500; text-align: right; font-size: 14px; border-bottom: 1px solid rgba(217,167,86,0.2);">${reservationTime || 'To be confirmed'}</td>
+              <td style="padding: 12px 0; color: #5C524D; font-weight: 600; text-align: left; font-size: 14px; border-bottom: 1px solid #E8E0D8;">Time</td>
+              <td style="padding: 12px 0; color: #2D2926; font-weight: 500; text-align: right; font-size: 14px; border-bottom: 1px solid #E8E0D8;">${reservationTime || 'To be confirmed'}</td>
             </tr>
             <tr>
-              <td style="padding: 12px 0; color: #6A3A1E; font-weight: 600; text-align: left; font-size: 14px;">Party Size</td>
-              <td style="padding: 12px 0; color: #3C1F0E; font-weight: 500; text-align: right; font-size: 14px;">${guestCount || 'To be confirmed'} guests</td>
+              <td style="padding: 12px 0; color: #5C524D; font-weight: 600; text-align: left; font-size: 14px;">Party Size</td>
+              <td style="padding: 12px 0; color: #2D2926; font-weight: 500; text-align: right; font-size: 14px;">${guestCount || 'To be confirmed'} guests</td>
             </tr>
           </table>
-          <p style="color: #8B7355; font-size: 13px; text-align: center; margin: 22px 0 0 0; font-style: italic;">
+          <p style="color: #5C524D; font-size: 13px; text-align: center; margin: 22px 0 0 0; font-style: italic;">
             We will confirm your reservation within a few hours during business hours.
           </p>
         </div>
@@ -611,15 +641,15 @@ Corrado\'s Restaurant Contact Form
     let careersConfirmHtml = '';
     if (isCareers) {
       careersConfirmHtml = `
-        <div style="background: #FDF8F3; padding: 28px; border-radius: 4px; margin: 28px 0; border: 1px dashed #D9A756;">
-          <h3 style="color: #3C1F0E; margin: 0 0 22px 0; font-size: 14px; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Your Application</h3>
+        <div style="background: #FDF8F4; padding: 28px; border-radius: 4px; margin: 28px 0; border: 1px dashed #BE5953;">
+          <h3 style="color: #2D2926; margin: 0 0 22px 0; font-size: 14px; text-align: center; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Your Application</h3>
           <table style="width: 100%; border-collapse: collapse; max-width: 320px; margin: 0 auto;">
             <tr>
-              <td style="padding: 12px 0; color: #6A3A1E; font-weight: 600; text-align: left; font-size: 14px;">Position</td>
-              <td style="padding: 12px 0; color: #3C1F0E; font-weight: 500; text-align: right; font-size: 14px;">${position || 'Not specified'}</td>
+              <td style="padding: 12px 0; color: #5C524D; font-weight: 600; text-align: left; font-size: 14px;">Position</td>
+              <td style="padding: 12px 0; color: #2D2926; font-weight: 500; text-align: right; font-size: 14px;">${position || 'Not specified'}</td>
             </tr>
           </table>
-          <p style="color: #8B7355; font-size: 13px; text-align: center; margin: 22px 0 0 0; font-style: italic;">
+          <p style="color: #5C524D; font-size: 13px; text-align: center; margin: 22px 0 0 0; font-style: italic;">
             Our team will review your application and contact you soon.
           </p>
         </div>
@@ -637,10 +667,10 @@ Corrado\'s Restaurant Contact Form
 
           <!-- Content -->
           <tr>
-            <td style="padding: 45px 35px;">
-              <p style="color: #3C1F0E; font-size: 18px; margin: 0 0 8px 0;">Dear ${name},</p>
+            <td class="content-pad" style="padding: 45px 35px;">
+              <p style="color: #2D2926; font-size: 18px; margin: 0 0 8px 0; font-family: Georgia, 'Times New Roman', serif;">Dear ${name},</p>
 
-              <p style="color: #4A2C17; line-height: 1.85; font-size: 15px; margin: 20px 0 28px 0;">
+              <p style="color: #5C524D; line-height: 1.85; font-size: 15px; margin: 20px 0 28px 0;">
                 ${
                   isReservation
                     ? "Thank you for your party reservation request at Corrado's Restaurant. We have received your booking details and our team will review and confirm your reservation shortly."
@@ -654,37 +684,37 @@ Corrado\'s Restaurant Contact Form
               ${careersConfirmHtml}
 
               <!-- What they sent -->
-              <div style="background: #FFFDFB; padding: 24px; border-radius: 4px; border: 1px solid rgba(217,167,86,0.25); margin: 28px 0;">
-                <p style="color: #6A3A1E; font-weight: 600; margin: 0 0 12px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Message</p>
-                <p style="color: #4A2C17; line-height: 1.75; margin: 0; font-style: italic; font-size: 14px;">"${message}"</p>
+              <div style="background: #FFFCF8; padding: 24px; border-radius: 4px; border: 1px solid #E8E0D8; margin: 28px 0;">
+                <p style="color: #5C524D; font-weight: 600; margin: 0 0 12px 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Your Message</p>
+                <p style="color: #5C524D; line-height: 1.75; margin: 0; font-style: italic; font-size: 14px;">"${message}"</p>
               </div>
 
               <!-- Contact Info -->
-              <div style="background: linear-gradient(135deg, #F9F6F2 0%, #FDF8F3 100%); padding: 28px; border-radius: 4px; text-align: center; margin-top: 32px;">
-                <p style="color: #3C1F0E; font-weight: 600; margin: 0 0 18px 0; font-size: 15px;">Need to reach us sooner?</p>
-                <table style="width: 100%; max-width: 280px; margin: 0 auto; border-collapse: collapse;">
+              <div style="background: #FDF8F4; padding: 28px; border-radius: 4px; text-align: center; margin-top: 32px;">
+                <p style="color: #2D2926; font-weight: 600; margin: 0 0 18px 0; font-size: 15px;">Need to reach us sooner?</p>
+                <table style="width: 100%; max-width: 320px; margin: 0 auto; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 8px 0; color: #6A3A1E; font-size: 14px;">Phone</td>
-                    <td style="padding: 8px 0; text-align: right;"><a href="tel:9056553513" style="color: #B08030; text-decoration: none; font-weight: 500; font-size: 14px;">(905) 425-3055</a></td>
+                    <td style="padding: 8px 0; color: #5C524D; font-size: 14px;">Phone</td>
+                    <td style="padding: 8px 0; text-align: right;"><a href="tel:+19056553100" style="color: #BE5953; text-decoration: none; font-weight: 500; font-size: 14px;">(905) 655-3100</a></td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6A3A1E; font-size: 14px;">Email</td>
-                    <td style="padding: 8px 0; text-align: right;"><a href="mailto:corradosrestaurant@gmail.com" style="color: #B08030; text-decoration: none; font-weight: 500; font-size: 14px;">corradosrestaurant@gmail.com</a></td>
+                    <td style="padding: 8px 0; color: #5C524D; font-size: 14px;">Email</td>
+                    <td style="padding: 8px 0; text-align: right;"><a href="mailto:corradosrestaurant@rogers.com" style="color: #BE5953; text-decoration: none; font-weight: 500; font-size: 14px;">corradosrestaurant@rogers.com</a></td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6A3A1E; font-size: 14px;">Address</td>
-                    <td style="padding: 8px 0; text-align: right; color: #4A2C17; font-size: 14px;">15 Baldwin Street, Whitby</td>
+                    <td style="padding: 8px 0; color: #5C524D; font-size: 14px;">Address</td>
+                    <td style="padding: 8px 0; text-align: right; color: #2D2926; font-size: 14px;">38 Baldwin Street, Whitby</td>
                   </tr>
                 </table>
               </div>
 
-              <p style="color: #4A2C17; line-height: 1.8; font-size: 15px; margin: 35px 0 0 0; text-align: center;">
+              <p style="color: #5C524D; line-height: 1.8; font-size: 15px; margin: 35px 0 0 0; text-align: center;">
                 We look forward to ${isReservation ? "welcoming you to Corrado's Restaurant" : 'connecting with you'}.
               </p>
 
-              <p style="color: #3C1F0E; font-size: 15px; margin: 25px 0 0 0; text-align: center;">
+              <p style="color: #2D2926; font-size: 15px; margin: 25px 0 0 0; text-align: center;">
                 Warm regards,<br>
-                <span style="color: #6A3A1E; font-weight: 500;">The Corrado's Restaurant Team</span>
+                <span style="color: #5C524D; font-weight: 500;">The Corrado's Restaurant Team</span>
               </p>
             </td>
           </tr>
@@ -692,7 +722,7 @@ Corrado\'s Restaurant Contact Form
           <!-- CTA -->
           <tr>
             <td style="padding: 0 35px 40px 35px; text-align: center;">
-              <a href="https://corradosrestaurant.com" style="display: inline-block; background: #D9A756; color: #3C1F0E; padding: 16px 42px; border-radius: 3px; text-decoration: none; font-weight: 600; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;">
+              <a href="https://corradosrestaurant.com" style="display: inline-block; background: #BE5953; color: #ffffff; padding: 16px 42px; border-radius: 2px; text-decoration: none; font-weight: 600; font-size: 13px; letter-spacing: 1px; text-transform: uppercase;">
                 Visit Our Website
               </a>
             </td>
@@ -741,9 +771,9 @@ YOUR MESSAGE
 
 NEED TO REACH US SOONER?
 ─────────────────────────
-Phone: (905) 425-3055
-Email: corradosrestaurant@gmail.com
-Address: 15 Baldwin Street, Whitby, ON
+Phone: (905) 655-3100
+Email: corradosrestaurant@rogers.com
+Address: 38 Baldwin Street, Whitby, ON
 
 We look forward to ${isReservation ? "welcoming you to Corrado's Restaurant" : 'connecting with you'}.
 
@@ -751,8 +781,8 @@ Warm regards,
 The Corrado's Restaurant Team
 
 ─────────────────────────
-Corrado's Restaurant
-15 Baldwin Street, Whitby, ON L1M 1A2
+Corrado's Restaurant & Bar
+38 Baldwin Street, Whitby, ON L1M 1A2
 corradosrestaurant.com
     `;
 

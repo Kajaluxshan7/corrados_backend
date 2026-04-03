@@ -8,6 +8,7 @@ import {
   Min,
   ValidateNested,
   IsArray,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -87,6 +88,12 @@ export class CreatePartyMenuDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsArray()
+  @IsOptional()
+  @ArrayMaxSize(5)
+  @IsString({ each: true })
+  imageUrls?: string[];
 
   @IsNumber()
   @IsOptional()
