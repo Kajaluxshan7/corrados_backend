@@ -136,8 +136,11 @@ export class MenuService {
   }
 
   // Category methods
-  async findAllCategories(): Promise<MenuCategory[]> {
+  async findAllCategories(primaryCategoryId?: string): Promise<MenuCategory[]> {
     return this.categoryRepository.find({
+      where: primaryCategoryId
+        ? { primaryCategory: { id: primaryCategoryId } }
+        : undefined,
       order: { sortOrder: 'ASC' },
       relations: ['menuItems', 'primaryCategory'],
     });
@@ -303,7 +306,7 @@ export class MenuService {
     return this.menuItemRepository.find({
       where: { categoryId },
       order: { sortOrder: 'ASC' },
-      relations: ['category', 'measurements'],
+      relations: ['category', 'measurements', 'measurements.measurementTypeEntity'],
     });
   }
 

@@ -9,6 +9,7 @@
   UseGuards,
   Logger,
   InternalServerErrorException,
+  Query,
 } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -72,8 +73,8 @@ export class MenuController {
 
   // Category endpoints
   @Get('categories')
-  findAllCategories() {
-    return this.menuService.findAllCategories();
+  findAllCategories(@Query('primaryCategoryId') primaryCategoryId?: string) {
+    return this.menuService.findAllCategories(primaryCategoryId);
   }
 
   @Get('categories/:id')
