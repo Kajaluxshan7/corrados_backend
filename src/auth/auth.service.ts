@@ -329,8 +329,13 @@ export class AuthService {
     }
   }
 
-  async findAllUsers() {
+  async findAllUsers(callerRole: string = 'super_admin') {
+    // Regular admins can only see other regular admins, not super admins
+    const where =
+      callerRole === 'super_admin' ? {} : { role: 'admin' as const };
+
     return await this.userRepository.find({
+      where,
       select: [
         'id',
         'email',

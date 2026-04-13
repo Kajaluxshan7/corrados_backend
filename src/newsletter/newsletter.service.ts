@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as nodemailer from 'nodemailer';
 import * as crypto from 'crypto';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PDFDocument = require('pdfkit') as typeof import('pdfkit');
 import { Subscriber } from '../entities/subscriber.entity';
 import { SubscribeDto, GetSubscribersQueryDto } from './dto';
 import { getRequiredEnv, getOptionalEnv } from '../config/env.validation';
@@ -17,7 +19,7 @@ import { ILike, IsNull, Not } from 'typeorm';
 @Injectable()
 export class NewsletterService {
   private readonly logger = new Logger(NewsletterService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter!: nodemailer.Transporter;
   private readonly emailFrom: string;
   private readonly frontendUrl: string;
   private readonly backendPublicUrl: string;
@@ -101,8 +103,11 @@ export class NewsletterService {
       };
     }
 
+    const nextNumber = await this.getNextSubscriberNumber();
+
     const subscriber = this.subscriberRepository.create({
       email,
+      subscriberNumber: nextNumber,
       unsubscribeToken: crypto.randomUUID(),
     });
 
@@ -641,7 +646,168 @@ export class NewsletterService {
     );
   }
 
+  // ─── PDF Export ─────────────────────────────────────────────────
+
+  /**
+   * Generate a PDF report of all subscribers (admin only).
+   * Returns a Buffer containing the PDF bytes.
+   */
+  async exportSubscribersPdf(status: string = 'all'): Promise<Buffer> {
+    const statusConditions: Record<string, unknown> = (() => {
+      switch (status) {
+        case 'active':
+          return { isActive: true };
+        case 'unsubscribed':
+          return { isActive: false };
+        case 'promo_pending':
+          return { isActive: true, promoCodeSent: false };
+        case 'promo_sent':
+          return { promoCodeSent: true, promoClaimed: false };
+        case 'promo_claimed':
+          return { promoClaimed: true };
+        default:
+          return {};
+      }
+    })();
+
+    const subscribers = await this.subscriberRepository.find({
+      where: statusConditions,
+      order: { subscriberNumber: 'ASC' },
+    });
+
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
+      const chunks: Buffer[] = [];
+
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      // ── Header ──
+      const accentColor = '#BE5953';
+      const headerBg = '#F5EDE8';
+
+      doc.rect(0, 0, doc.page.width, 80).fill(headerBg);
+      doc
+        .fillColor(accentColor)
+        .fontSize(22)
+        .font('Helvetica-Bold')
+        .text("Corrado's Restaurant", 40, 20, { align: 'left' });
+      doc
+        .fillColor('#555')
+        .fontSize(11)
+        .font('Helvetica')
+        .text('Newsletter Subscriber Report', 40, 48, { align: 'left' });
+
+      const generatedAt = new Date().toLocaleString('en-CA', {
+        timeZone: 'America/Toronto',
+        dateStyle: 'long',
+        timeStyle: 'short',
+      });
+      doc
+        .fillColor('#888')
+        .fontSize(9)
+        .text(`Generated: ${generatedAt}  |  Filter: ${status}  |  Total: ${subscribers.length}`, 40, 62, {
+          align: 'left',
+        });
+
+      doc.moveDown(3);
+
+      // ── Table header ──
+      const tableTop = 100;
+      const col = { num: 40, email: 80, status: 310, promo: 390, date: 470 };
+      const rowHeight = 20;
+
+      doc.rect(40, tableTop, doc.page.width - 80, rowHeight).fill('#E8D5D3');
+      doc
+        .fillColor('#2A1509')
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .text('#', col.num, tableTop + 6)
+        .text('Email', col.email, tableTop + 6)
+        .text('Status', col.status, tableTop + 6)
+        .text('Promo', col.promo, tableTop + 6)
+        .text('Subscribed', col.date, tableTop + 6);
+
+      // ── Rows ──
+      let y = tableTop + rowHeight;
+      doc.font('Helvetica').fontSize(8);
+
+      for (let i = 0; i < subscribers.length; i++) {
+        const sub = subscribers[i];
+
+        // Page break
+        if (y + rowHeight > doc.page.height - 60) {
+          doc.addPage();
+          y = 40;
+          // Repeat header on new page
+          doc.rect(40, y, doc.page.width - 80, rowHeight).fill('#E8D5D3');
+          doc
+            .fillColor('#2A1509')
+            .font('Helvetica-Bold')
+            .fontSize(9)
+            .text('#', col.num, y + 6)
+            .text('Email', col.email, y + 6)
+            .text('Status', col.status, y + 6)
+            .text('Promo', col.promo, y + 6)
+            .text('Subscribed', col.date, y + 6);
+          y += rowHeight;
+          doc.font('Helvetica').fontSize(8);
+        }
+
+        // Alternating row background
+        if (i % 2 === 0) {
+          doc.rect(40, y, doc.page.width - 80, rowHeight).fill('#FAF5F3');
+        }
+
+        const subStatus = sub.isActive ? 'Active' : 'Unsubscribed';
+        const promoStatus = sub.promoClaimed
+          ? 'Claimed'
+          : sub.promoCodeSent
+            ? 'Sent'
+            : '—';
+        const subscribedDate = sub.subscribedAt
+          ? sub.subscribedAt.toLocaleDateString('en-CA')
+          : '—';
+
+        doc
+          .fillColor('#333')
+          .text(String(sub.subscriberNumber ?? i + 1), col.num, y + 6)
+          .text(sub.email, col.email, y + 6, { width: 220, ellipsis: true })
+          .text(subStatus, col.status, y + 6)
+          .text(promoStatus, col.promo, y + 6)
+          .text(subscribedDate, col.date, y + 6);
+
+        y += rowHeight;
+      }
+
+      // ── Footer ──
+      doc
+        .fillColor('#aaa')
+        .fontSize(8)
+        .text(
+          `Corrado's Restaurant — Confidential`,
+          40,
+          doc.page.height - 40,
+          { align: 'center', width: doc.page.width - 80 },
+        );
+
+      doc.end();
+    });
+  }
+
   // ─── Private Helpers ────────────────────────────────────────────
+
+  /**
+   * Get the next sequential subscriber number.
+   */
+  private async getNextSubscriberNumber(): Promise<number> {
+    const result = await this.subscriberRepository
+      .createQueryBuilder('subscriber')
+      .select('COALESCE(MAX(subscriber.subscriberNumber), 0)', 'maxNum')
+      .getRawOne();
+    return (result?.maxNum ?? 0) + 1;
+  }
 
   /**
    * Generate a cryptographically secure 8-character promo code (A-Z, 0-9).

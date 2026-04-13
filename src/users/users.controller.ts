@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Patch,
+  Request,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
@@ -17,10 +18,12 @@ import { UpdateUserDto } from '../auth/dto/update-user.dto';
 export class UsersController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(SuperAdminGuard)
+  // Any authenticated admin can list users.
+  // Super admins see everyone; regular admins see only role=admin users.
   @Get()
-  findAll() {
-    return this.authService.findAllUsers();
+  findAll(@Request() req: any) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    return this.authService.findAllUsers(req.user.role as string);
   }
 
   @Get(':id')
