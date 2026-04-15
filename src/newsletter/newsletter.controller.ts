@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  HttpException,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
@@ -72,8 +73,10 @@ export class NewsletterController {
   @Post('subscribers/:id/send-promo')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  sendPromoCode(@Param('id') id: string) {
-    return this.newsletterService.sendPromoCode(id);
+  sendPromoCode(@Param('id') _id: string) {
+    // FEATURE DISABLED: Send promo code is temporarily turned off.
+    // To re-enable, remove this block and restore: return this.newsletterService.sendPromoCode(_id);
+    throw new HttpException('Send promo code feature is currently disabled.', HttpStatus.SERVICE_UNAVAILABLE);
   }
 
   @Patch('subscribers/:id/claim-promo')
