@@ -12,12 +12,18 @@ export class SiteImagesService {
     private readonly repo: Repository<SiteImage>,
   ) {}
 
-  /** Returns all image slots as a key→url map — used by the public frontend. */
+  /**
+   * Returns only admin-overridden images as a key→url map.
+   * Rows where imageUrl still equals defaultImageUrl are excluded so the
+   * frontend falls back to its own hardcoded defaults for those slots.
+   */
   async getMap(): Promise<Record<string, string>> {
     const rows = await this.repo.find();
     const map: Record<string, string> = {};
     for (const row of rows) {
-      map[row.key] = row.imageUrl;
+      if (row.imageUrl !== row.defaultImageUrl) {
+        map[row.key] = row.imageUrl;
+      }
     }
     return map;
   }
