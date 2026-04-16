@@ -25,6 +25,8 @@ import { PartyMenuModule } from './party-menu/party-menu.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { HealthModule } from './health/health.module';
 import { PartyMenu } from './entities/party-menu.entity';
+import { SiteImage } from './entities/site-image.entity';
+import { SiteImagesModule } from './site-images/site-images.module';
 import { PartyMenuSection } from './entities/party-menu-section.entity';
 import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity';
 import { User } from './entities/user.entity';
@@ -97,6 +99,7 @@ import { Announcement } from './entities/announcement.entity';
             PartyMenu,
             PartyMenuSection,
             PartyMenuSectionItem,
+            SiteImage,
           ],
           synchronize:
             configService.getOrThrow<string>('NODE_ENV') !== 'production',
@@ -123,6 +126,7 @@ import { Announcement } from './entities/announcement.entity';
     NotificationsModule,
     AnnouncementsModule,
     PartyMenuModule,
+    SiteImagesModule,
   ],
   controllers: [AppController],
   providers: [

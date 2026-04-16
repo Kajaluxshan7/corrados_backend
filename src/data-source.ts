@@ -20,6 +20,7 @@ import { Announcement } from './entities/announcement.entity';
 import { PartyMenu } from './entities/party-menu.entity';
 import { PartyMenuSection } from './entities/party-menu-section.entity';
 import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity';
+import { SiteImage } from './entities/site-image.entity';
 
 config();
 
@@ -68,6 +69,7 @@ export const AppDataSource = new DataSource({
     PartyMenu,
     PartyMenuSection,
     PartyMenuSectionItem,
+    SiteImage,
   ],
   migrations: ['src/migrations/**/*.ts'],
   synchronize: false, // We'll use migrations instead

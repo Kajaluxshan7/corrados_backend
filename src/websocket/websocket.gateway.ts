@@ -59,6 +59,9 @@ export enum WsEvent {
 
   // Dashboard events
   DASHBOARD_REFRESH = 'dashboard:refresh',
+
+  // Site images events
+  SITE_IMAGES_UPDATED = 'siteImages:updated',
 }
 
 @WebSocketGateway({
