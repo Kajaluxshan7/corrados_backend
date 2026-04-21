@@ -20,6 +20,8 @@ import { Announcement } from './entities/announcement.entity';
 import { PartyMenu } from './entities/party-menu.entity';
 import { PartyMenuSection } from './entities/party-menu-section.entity';
 import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity';
+import { FamilyMeal } from './entities/family-meal.entity';
+import { FamilyMealAddon } from './entities/family-meal-addon.entity';
 import { SiteImage } from './entities/site-image.entity';
 
 config();
@@ -69,6 +71,8 @@ export const AppDataSource = new DataSource({
     PartyMenu,
     PartyMenuSection,
     PartyMenuSectionItem,
+    FamilyMeal,
+    FamilyMealAddon,
     SiteImage,
   ],
   migrations: ['src/migrations/**/*.ts'],

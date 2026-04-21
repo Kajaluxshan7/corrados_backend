@@ -64,6 +64,14 @@ async function bootstrap() {
   });
   Logger.log(`Serving uploads from: ${absoluteUploadDir}`);
 
+  // Serve frontend public/restaurant images so the admin dashboard can display
+  // default site images without requiring the frontend dev server to be running.
+  const frontendPublicDir = path.join(process.cwd(), '..', 'corrados_frontend', 'public');
+  if (fs.existsSync(frontendPublicDir)) {
+    app.useStaticAssets(frontendPublicDir, { prefix: '/' });
+    Logger.log(`Serving frontend public assets from: ${frontendPublicDir}`);
+  }
+
   // Enable cookie parser
   app.use(cookieParser());
 

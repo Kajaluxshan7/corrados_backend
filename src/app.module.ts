@@ -22,9 +22,12 @@ import { NewsletterModule } from './newsletter/newsletter.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { PartyMenuModule } from './party-menu/party-menu.module';
+import { FamilyMealsModule } from './family-meals/family-meals.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { HealthModule } from './health/health.module';
 import { PartyMenu } from './entities/party-menu.entity';
+import { FamilyMeal } from './entities/family-meal.entity';
+import { FamilyMealAddon } from './entities/family-meal-addon.entity';
 import { SiteImage } from './entities/site-image.entity';
 import { SiteImagesModule } from './site-images/site-images.module';
 import { PartyMenuSection } from './entities/party-menu-section.entity';
@@ -99,6 +102,8 @@ import { Announcement } from './entities/announcement.entity';
             PartyMenu,
             PartyMenuSection,
             PartyMenuSectionItem,
+            FamilyMeal,
+            FamilyMealAddon,
             SiteImage,
           ],
           synchronize:
@@ -126,6 +131,7 @@ import { Announcement } from './entities/announcement.entity';
     NotificationsModule,
     AnnouncementsModule,
     PartyMenuModule,
+    FamilyMealsModule,
     SiteImagesModule,
   ],
   controllers: [AppController],

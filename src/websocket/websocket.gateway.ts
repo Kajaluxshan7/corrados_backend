@@ -48,6 +48,9 @@ export enum WsEvent {
   // Party menu events
   PARTY_MENU_UPDATED = 'partyMenu:updated',
 
+  // Family meals events
+  FAMILY_MEAL_UPDATED = 'familyMeal:updated',
+
   // User events
   USER_UPDATED = 'user:updated',
 
