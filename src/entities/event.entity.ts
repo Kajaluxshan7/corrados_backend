@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum EventType {
@@ -26,6 +27,7 @@ export class Event {
   @Column('text')
   description: string;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: EventType,
@@ -33,18 +35,20 @@ export class Event {
   })
   type: EventType;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   displayStartDate: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   displayEndDate: Date;
 
-  @Column({ type: 'timestamp' })
+  @Index()
+  @Column({ type: 'timestamptz' })
   eventStartDate: Date;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamptz' })
   eventEndDate: Date;
 
+  @Index()
   @Column({ default: true })
   isActive: boolean;
 

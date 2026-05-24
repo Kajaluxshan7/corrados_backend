@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { PartyMenuSection } from './party-menu-section.entity';
 
@@ -14,6 +15,7 @@ export class PartyMenuSectionItem {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   sectionId: string;
 

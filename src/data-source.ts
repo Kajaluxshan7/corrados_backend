@@ -23,6 +23,8 @@ import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity'
 import { FamilyMeal } from './entities/family-meal.entity';
 import { FamilyMealAddon } from './entities/family-meal-addon.entity';
 import { SiteImage } from './entities/site-image.entity';
+import { DigitalMenuPdf } from './entities/digital-menu-pdf.entity';
+import { Poster } from './entities/poster.entity';
 
 config();
 
@@ -74,6 +76,8 @@ export const AppDataSource = new DataSource({
     FamilyMeal,
     FamilyMealAddon,
     SiteImage,
+    DigitalMenuPdf,
+    Poster,
   ],
   migrations: ['src/migrations/**/*.ts'],
   synchronize: false, // We'll use migrations instead
@@ -81,8 +85,15 @@ export const AppDataSource = new DataSource({
   migrationsRun: false,
 });
 
-// If this file is run directly, synchronize the schema
+// If this file is run directly, synchronize the schema.
+// Guarded against production — schema changes there must go through migrations.
 if (require.main === module) {
+  if (process.env.NODE_ENV === 'production') {
+    Logger.error(
+      '❌ Refusing to run schema synchronize with NODE_ENV=production. Use migrations instead.',
+    );
+    process.exit(1);
+  }
   AppDataSource.initialize()
     .then(() => {
       Logger.log('📡 Data source initialized');

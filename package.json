@@ -27,6 +27,7 @@
     "migration:run": "npm run typeorm -- migration:run -d src/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
     "migration:show": "npm run typeorm -- migration:show -d src/data-source.ts",
+    "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "docker:build": "docker build -t corrados-backend .",
     "docker:run": "docker-compose up -d",
     "docker:stop": "docker-compose down",

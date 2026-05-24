@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { PartyMenu } from './party-menu.entity';
 import { PartyMenuSectionItem } from './party-menu-section-item.entity';
@@ -18,6 +19,7 @@ export class PartyMenuSection {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column()
   partyMenuId: string;
 

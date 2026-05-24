@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { MenuItem } from './menu-item.entity';
 import { MeasurementType } from './measurement-type.entity';
@@ -15,9 +16,11 @@ export class MenuItemMeasurement {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({ nullable: false })
   menuItemId: string;
 
+  @Index()
   @Column({ nullable: true })
   measurementTypeId: string; // FK to measurement_types table (nullable to support freeform legacy values)
 

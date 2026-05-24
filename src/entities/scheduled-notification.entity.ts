@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum NotificationType {
@@ -33,9 +34,11 @@ export class ScheduledNotification {
   referenceId: string;
 
   /** When the notification should be sent */
+  @Index()
   @Column({ type: 'timestamptz' })
   scheduledFor: Date;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: NotificationStatus,

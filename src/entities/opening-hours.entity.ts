@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum DayOfWeek {
@@ -21,6 +22,7 @@ export class OpeningHours {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: DayOfWeek,

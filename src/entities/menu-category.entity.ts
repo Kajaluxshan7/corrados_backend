@@ -7,6 +7,7 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { MenuItem } from './menu-item.entity';
 import { PrimaryCategory } from './primary-category.entity';
@@ -28,9 +29,11 @@ export class MenuCategory {
   @Column({ default: 0 })
   sortOrder: number;
 
+  @Index()
   @Column({ default: true })
   isActive: boolean;
 
+  @Index()
   @Column({ nullable: true })
   primaryCategoryId: string;
 

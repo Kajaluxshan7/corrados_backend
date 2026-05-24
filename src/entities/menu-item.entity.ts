@@ -7,6 +7,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { MenuCategory } from './menu-category.entity';
 import { MenuItemMeasurement } from './menu-item-measurement.entity';
@@ -45,6 +46,7 @@ export class MenuItem {
   @Column('text', { array: true, nullable: true, default: () => 'ARRAY[]::text[]' })
   dietaryInfo: string[]; // ['vegetarian', 'vegan', 'gluten-free']
 
+  @Index()
   @Column({ default: true })
   isAvailable: boolean;
 
@@ -55,6 +57,7 @@ export class MenuItem {
   @Column({ default: 0 })
   sortOrder: number;
 
+  @Index()
   @Column({ nullable: true })
   categoryId: string;
 

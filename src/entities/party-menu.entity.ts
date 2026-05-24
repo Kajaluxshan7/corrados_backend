@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { PartyMenuSection } from './party-menu-section.entity';
 
@@ -42,11 +43,15 @@ export class PartyMenu {
   @Column('text', { nullable: true })
   description: string;
 
+  @Index()
   @Column({ default: true })
   isActive: boolean;
 
   @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   imageUrls: string[];
+
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
+  pdfUrls: string[];
 
   @Column({ default: 0 })
   sortOrder: number;

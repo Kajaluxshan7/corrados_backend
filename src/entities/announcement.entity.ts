@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum AnnouncementType {
@@ -54,6 +55,7 @@ export class Announcement {
   })
   priority: AnnouncementPriority;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: AnnouncementStatus,

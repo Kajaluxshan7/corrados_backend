@@ -30,6 +30,10 @@ import { FamilyMeal } from './entities/family-meal.entity';
 import { FamilyMealAddon } from './entities/family-meal-addon.entity';
 import { SiteImage } from './entities/site-image.entity';
 import { SiteImagesModule } from './site-images/site-images.module';
+import { DigitalMenuModule } from './digital-menu/digital-menu.module';
+import { PostersModule } from './posters/posters.module';
+import { DigitalMenuPdf } from './entities/digital-menu-pdf.entity';
+import { Poster } from './entities/poster.entity';
 import { PartyMenuSection } from './entities/party-menu-section.entity';
 import { PartyMenuSectionItem } from './entities/party-menu-section-item.entity';
 import { User } from './entities/user.entity';
@@ -105,6 +109,8 @@ import { Announcement } from './entities/announcement.entity';
             FamilyMeal,
             FamilyMealAddon,
             SiteImage,
+            DigitalMenuPdf,
+            Poster,
           ],
           synchronize:
             configService.getOrThrow<string>('NODE_ENV') !== 'production',
@@ -133,6 +139,8 @@ import { Announcement } from './entities/announcement.entity';
     PartyMenuModule,
     FamilyMealsModule,
     SiteImagesModule,
+    DigitalMenuModule,
+    PostersModule,
   ],
   controllers: [AppController],
   providers: [

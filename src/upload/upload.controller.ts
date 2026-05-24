@@ -27,12 +27,12 @@ export class UploadController {
       throw new BadRequestException('No files uploaded');
     }
 
-    // Validate file size (1MB limit)
-    const maxSize = 1024 * 1024; // 1MB
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
     for (const file of files) {
       if (file.size > maxSize) {
         throw new BadRequestException(
-          `File ${file.originalname} exceeds 1MB size limit`,
+          `File ${file.originalname} exceeds 5MB size limit`,
         );
       }
     }
@@ -69,6 +69,56 @@ export class UploadController {
       return {
         success: true,
         message: 'Images uploaded successfully',
+        urls: uploadedUrls,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Upload failed: ${error.message}`);
+    }
+  }
+
+  @Post('pdfs')
+  @UseInterceptors(FilesInterceptor('pdfs', 10))
+  async uploadPdfs(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body('folder') folder?: string,
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files uploaded');
+    }
+
+    const maxSize = 20 * 1024 * 1024; // 20MB per PDF
+    for (const file of files) {
+      if (file.size > maxSize) {
+        throw new BadRequestException(
+          `File ${file.originalname} exceeds 20MB size limit`,
+        );
+      }
+    }
+
+    const allowedMimeTypes = ['application/pdf'];
+    for (const file of files) {
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestException(
+          `File ${file.originalname} is not a PDF`,
+        );
+      }
+      const ext = file.originalname.toLowerCase().split('.').pop();
+      if (ext !== 'pdf') {
+        throw new BadRequestException(
+          `File ${file.originalname} must have a .pdf extension`,
+        );
+      }
+    }
+
+    try {
+      const safeFolder = (folder || 'pdfs').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const uploadedUrls = await this.uploadService.uploadMultipleFiles(
+        files,
+        safeFolder,
+      );
+      return {
+        success: true,
+        message: 'PDFs uploaded successfully',
         urls: uploadedUrls,
       };
     } catch (error) {

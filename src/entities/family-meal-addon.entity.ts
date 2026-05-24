@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { FamilyMeal } from './family-meal.entity';
 
@@ -16,6 +17,7 @@ export class FamilyMealAddon {
   @JoinColumn({ name: 'familyMealId' })
   familyMeal: FamilyMeal;
 
+  @Index()
   @Column({ type: 'uuid' })
   familyMealId: string;
 

@@ -65,6 +65,12 @@ export enum WsEvent {
 
   // Site images events
   SITE_IMAGES_UPDATED = 'siteImages:updated',
+
+  // Digital menu events
+  DIGITAL_MENU_UPDATED = 'digitalMenu:updated',
+
+  // Posters events
+  POSTERS_UPDATED = 'posters:updated',
 }
 
 @WebSocketGateway({

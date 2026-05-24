@@ -4,14 +4,18 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export enum SpecialType {
   DAILY = 'daily',
+  EVERYDAY = 'everyday',
+  WEEKEND = 'weekend',
   GAME_TIME = 'game_time',
   DAY_TIME = 'day_time',
   CHEF = 'chef',
   SEASONAL = 'seasonal',
+  LIMITED_TIME = 'limited_time',
 }
 
 export enum DayOfWeek {
@@ -40,6 +44,7 @@ export class Special {
   @Column('text')
   description: string;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: SpecialType,
@@ -78,6 +83,7 @@ export class Special {
   @Column({ type: 'timestamptz', nullable: true })
   specialEndDate: Date;
 
+  @Index()
   @Column({ default: true })
   isActive: boolean;
 

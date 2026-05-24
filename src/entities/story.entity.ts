@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { StoryCategory } from './story-category.entity';
 
@@ -14,12 +15,14 @@ export class Story {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Index()
   @Column('uuid')
   categoryId: string;
 
   @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   imageUrls: string[];
 
+  @Index()
   @Column({ default: true })
   isActive: boolean;
 

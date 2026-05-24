@@ -5,6 +5,7 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { FamilyMealAddon } from './family-meal-addon.entity';
 
@@ -32,6 +33,7 @@ export class FamilyMeal {
   priceLabel: string;
 
   /** 'combo' for family combo packages, 'daily_special' for weekday/weekend specials */
+  @Index()
   @Column({ type: 'varchar', length: 50, default: 'combo' })
   mealType: 'combo' | 'daily_special';
 
@@ -43,6 +45,7 @@ export class FamilyMeal {
   @Column({ type: 'text', array: true, default: '{}' })
   items: string[];
 
+  @Index()
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 
@@ -51,6 +54,9 @@ export class FamilyMeal {
 
   @Column({ type: 'text', array: true, default: '{}' })
   imageUrls: string[];
+
+  @Column({ type: 'text', array: true, default: '{}' })
+  pdfUrls: string[];
 
   @OneToMany(() => FamilyMealAddon, (addon) => addon.familyMeal, {
     cascade: true,
