@@ -21,7 +21,7 @@ async function bootstrap() {
   try {
     validateEnvironment();
   } catch (error) {
-    Logger.error(error.message);
+    Logger.error((error as Error).message);
     process.exit(1);
   }
 
@@ -66,7 +66,12 @@ async function bootstrap() {
 
   // Serve frontend public/restaurant images so the admin dashboard can display
   // default site images without requiring the frontend dev server to be running.
-  const frontendPublicDir = path.join(process.cwd(), '..', 'corrados_frontend', 'public');
+  const frontendPublicDir = path.join(
+    process.cwd(),
+    '..',
+    'corrados_frontend',
+    'public',
+  );
   if (fs.existsSync(frontendPublicDir)) {
     app.useStaticAssets(frontendPublicDir, { prefix: '/' });
     Logger.log(`Serving frontend public assets from: ${frontendPublicDir}`);

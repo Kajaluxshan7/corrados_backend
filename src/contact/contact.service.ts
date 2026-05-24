@@ -122,7 +122,7 @@ export class ContactService {
 
     // Verify transporters - run verification but don't block constructor
     // The verification is for logging purposes only, transporters work without verification
-    this.verifyTransporters();
+    void this.verifyTransporters();
   }
 
   /**
@@ -241,8 +241,8 @@ export class ContactService {
           <!-- Header - warm cream with branding -->
           <tr>
             <td align="center" style="background-color: #FFFCF8; padding: 36px 32px 28px; border-bottom: 1px solid rgba(42,21,9,0.06);">
-              <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
-              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2D2926; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado\'s</p>
+              <img src="${this.logoUrl}" alt="Corrado's Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
+              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2D2926; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado's</p>
               <p style="margin: 6px 0 0; font-size: 11px; color: #BE5953; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;">
                 ${subtitle}
               </p>
@@ -287,7 +287,7 @@ export class ContactService {
                 </tr>
                 <tr>
                   <td align="center" style="padding: 18px 0 14px;">
-                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #5C524D; letter-spacing: 0.3px;">Corrado\'s Restaurant &amp; Bar</p>
+                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #5C524D; letter-spacing: 0.3px;">Corrado's Restaurant &amp; Bar</p>
                     <p style="margin: 0 0 2px; font-size: 12px; color: rgba(45,41,38,0.45);">38 Baldwin Street, Whitby, ON L1M 1A2</p>
                     <p style="margin: 0; font-size: 12px; color: rgba(45,41,38,0.45);">
                       <a href="tel:+19056553100" style="color: rgba(45,41,38,0.45); text-decoration: none;">(905) 655-3100</a>&ensp;&#183;&ensp;
@@ -321,7 +321,7 @@ export class ContactService {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="color-scheme" content="light">
   <meta name="supported-color-schemes" content="light">
-  <title>Corrado\'s Restaurant</title>
+  <title>Corrado's Restaurant</title>
   <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
   <style>
     body, table, td { margin: 0; padding: 0; }
@@ -458,7 +458,7 @@ ${message}
 
 ─────────────────────────────────────────
 Received: ${new Date().toLocaleString('en-CA', { timeZone: 'America/Toronto' })}
-Corrado\'s Restaurant Contact Form
+Corrado's Restaurant Contact Form
     `;
 
     const htmlContent = this.getEmailWrapper(`
@@ -556,10 +556,12 @@ Corrado\'s Restaurant Contact Form
       };
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const info = await transporter.sendMail(mailOptions);
         this.logger.log(
           `Notification email sent to ${recipientEmail}. Info: ${JSON.stringify(info)}`,
         );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const preview = nodemailer.getTestMessageUrl(info);
         if (preview) this.logger.log(`Preview URL: ${preview}`);
         return { success: true, email: recipientEmail };
@@ -568,6 +570,7 @@ Corrado\'s Restaurant Contact Form
           `Failed to send notification email to ${recipientEmail}:`,
           error,
         );
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         return { success: false, email: recipientEmail, error };
       }
     });
@@ -595,7 +598,7 @@ Corrado\'s Restaurant Contact Form
 
   private async sendCustomerConfirmation(
     contactDto: CreateContactDto,
-    subjectLabel: string,
+    _subjectLabel: string,
   ): Promise<void> {
     const {
       name,
@@ -799,10 +802,12 @@ corradosrestaurant.com
     };
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const info = await transporter.sendMail(mailOptions);
       this.logger.log(
         `Customer confirmation email sent to ${email}. Info: ${JSON.stringify(info)}`,
       );
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const preview = nodemailer.getTestMessageUrl(info);
       if (preview) this.logger.log(`Preview URL: ${preview}`);
     } catch (error) {

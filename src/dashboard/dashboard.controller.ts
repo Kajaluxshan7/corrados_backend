@@ -8,7 +8,7 @@ export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @Get('summary')
-  getSummary(@Req() req: any) {
+  getSummary(@Req() req: { user: { role: string } }) {
     return this.dashboardService.getSummary(req.user);
   }
 }

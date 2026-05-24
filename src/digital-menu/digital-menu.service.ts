@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DigitalMenuPdf, DigitalMenuCategory } from '../entities/digital-menu-pdf.entity';
+import {
+  DigitalMenuPdf,
+  DigitalMenuCategory,
+} from '../entities/digital-menu-pdf.entity';
 import { UploadService } from '../upload/upload.service';
 import { AppWebSocketGateway, WsEvent } from '../websocket/websocket.gateway';
 
@@ -15,7 +18,7 @@ export interface CreateDigitalMenuPdfDto {
   sortOrder?: number;
 }
 
-export interface UpdateDigitalMenuPdfDto extends Partial<CreateDigitalMenuPdfDto> {}
+export type UpdateDigitalMenuPdfDto = Partial<CreateDigitalMenuPdfDto>;
 
 @Injectable()
 export class DigitalMenuService {
@@ -52,14 +55,21 @@ export class DigitalMenuService {
     return saved;
   }
 
-  async update(id: string, dto: UpdateDigitalMenuPdfDto): Promise<DigitalMenuPdf> {
+  async update(
+    id: string,
+    dto: UpdateDigitalMenuPdfDto,
+  ): Promise<DigitalMenuPdf> {
     const item = await this.findById(id);
 
     // Clean up old PDF if URL changed
     if (dto.pdfUrl && dto.pdfUrl !== item.pdfUrl) {
       await this.uploadService.deleteFile(item.pdfUrl).catch(() => {});
     }
-    if (dto.thumbnailUrl && dto.thumbnailUrl !== item.thumbnailUrl && item.thumbnailUrl) {
+    if (
+      dto.thumbnailUrl &&
+      dto.thumbnailUrl !== item.thumbnailUrl &&
+      item.thumbnailUrl
+    ) {
       await this.uploadService.deleteFile(item.thumbnailUrl).catch(() => {});
     }
 
@@ -73,8 +83,10 @@ export class DigitalMenuService {
 
   async remove(id: string): Promise<void> {
     const item = await this.findById(id);
-    if (item.pdfUrl) await this.uploadService.deleteFile(item.pdfUrl).catch(() => {});
-    if (item.thumbnailUrl) await this.uploadService.deleteFile(item.thumbnailUrl).catch(() => {});
+    if (item.pdfUrl)
+      await this.uploadService.deleteFile(item.pdfUrl).catch(() => {});
+    if (item.thumbnailUrl)
+      await this.uploadService.deleteFile(item.thumbnailUrl).catch(() => {});
     await this.repo.remove(item);
     this.wsGateway.emitToAll(WsEvent.DIGITAL_MENU_UPDATED, {
       action: 'deleted',

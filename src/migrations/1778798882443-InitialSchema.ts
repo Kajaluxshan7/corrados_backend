@@ -1,102 +1,219 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitialSchema1778798882443 implements MigrationInterface {
-    name = 'InitialSchema1778798882443'
+  name = 'InitialSchema1778798882443';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "password" character varying NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "phone" character varying, "profileImage" character varying, "role" character varying NOT NULL DEFAULT 'admin', "isActive" boolean NOT NULL DEFAULT true, "passwordResetToken" character varying, "passwordResetTokenExpiry" TIMESTAMP, "isEmailVerified" boolean NOT NULL DEFAULT false, "emailVerificationToken" character varying, "emailVerificationTokenExpiry" TIMESTAMP, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "lastLoginAt" TIMESTAMP, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "primary_categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying, "imageUrl" character varying, "sortOrder" integer NOT NULL DEFAULT '0', "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_ec65b4cb8d57a45a8ed0ee0a648" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "menu_categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying, "imageUrl" character varying, "sortOrder" integer NOT NULL DEFAULT '0', "isActive" boolean NOT NULL DEFAULT true, "primaryCategoryId" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_124ae987900336f983881cb04e6" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "measurement_types" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "description" text, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_e335234f522d2f9dbf9dd486d76" UNIQUE ("name"), CONSTRAINT "PK_d3f60eb35311bc805dc20715608" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "menu_item_measurements" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "menuItemId" uuid NOT NULL, "measurementTypeId" uuid, "price" numeric(8,2) NOT NULL, "isAvailable" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b2253af6aedec88b638803aae52" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "menu_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text DEFAULT '', "price" numeric(8,2), "preparationTime" integer, "allergens" text array DEFAULT ARRAY[]::text[], "dietaryInfo" text array DEFAULT ARRAY[]::text[], "isAvailable" boolean NOT NULL DEFAULT true, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "sortOrder" integer NOT NULL DEFAULT '0', "categoryId" uuid, "hasMeasurements" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_57e6188f929e5dc6919168620c8" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."specials_type_enum" AS ENUM('daily', 'everyday', 'weekend', 'game_time', 'day_time', 'chef', 'seasonal', 'limited_time')`);
-        await queryRunner.query(`CREATE TYPE "public"."specials_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')`);
-        await queryRunner.query(`CREATE TYPE "public"."specials_specialcategory_enum" AS ENUM('regular', 'late_night')`);
-        await queryRunner.query(`CREATE TABLE "specials" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "type" "public"."specials_type_enum" NOT NULL DEFAULT 'daily', "dayOfWeek" "public"."specials_dayofweek_enum", "specialCategory" "public"."specials_specialcategory_enum" DEFAULT 'regular', "displayStartDate" TIMESTAMP WITH TIME ZONE, "displayEndDate" TIMESTAMP WITH TIME ZONE, "specialStartDate" TIMESTAMP WITH TIME ZONE, "specialEndDate" TIMESTAMP WITH TIME ZONE, "isActive" boolean NOT NULL DEFAULT true, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8c05b45b6cd6c1c263f8b74b627" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."events_type_enum" AS ENUM('live_music', 'sports_viewing', 'trivia_night', 'karaoke', 'private_party', 'special_event')`);
-        await queryRunner.query(`CREATE TABLE "events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "type" "public"."events_type_enum" NOT NULL DEFAULT 'special_event', "displayStartDate" TIMESTAMP NOT NULL, "displayEndDate" TIMESTAMP NOT NULL, "eventStartDate" TIMESTAMP NOT NULL, "eventEndDate" TIMESTAMP NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "imageUrls" json, "ticketLink" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_40731c7151fe4be3116e45ddf73" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."opening_hours_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')`);
-        await queryRunner.query(`CREATE TABLE "opening_hours" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "dayOfWeek" "public"."opening_hours_dayofweek_enum" NOT NULL, "openTime" TIME, "closeTime" TIME, "isClosedNextDay" boolean NOT NULL DEFAULT false, "isOpen" boolean NOT NULL DEFAULT true, "isActive" boolean NOT NULL DEFAULT true, "specialNote" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_09415e2b345103b1f5971464f85" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."todos_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')`);
-        await queryRunner.query(`CREATE TYPE "public"."todos_status_enum" AS ENUM('pending', 'in_progress', 'completed', 'cancelled')`);
-        await queryRunner.query(`CREATE TABLE "todos" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text, "priority" "public"."todos_priority_enum" NOT NULL DEFAULT 'medium', "status" "public"."todos_status_enum" NOT NULL DEFAULT 'pending', "dueDate" TIMESTAMP, "createdById" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "completedAt" TIMESTAMP, CONSTRAINT "PK_ca8cafd59ca6faaf67995344225" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "story_categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_5d714f3f0a746ab3e55fa0d6187" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "stories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "categoryId" uuid NOT NULL, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_bb6f880b260ed96c452b32a39f0" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "subscribers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "subscriberNumber" integer NOT NULL, "email" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "unsubscribeToken" character varying NOT NULL, "subscribedAt" TIMESTAMP NOT NULL DEFAULT now(), "unsubscribedAt" TIMESTAMP, "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "promoCode" character varying(8), "promoCodeSent" boolean NOT NULL DEFAULT false, "promoSentAt" TIMESTAMP, "promoClaimed" boolean NOT NULL DEFAULT false, "promoClaimedAt" TIMESTAMP, CONSTRAINT "UQ_6792dc8046b50dd79bc84c0a68d" UNIQUE ("subscriberNumber"), CONSTRAINT "UQ_1a7163c08f0e57bd1c9821508b1" UNIQUE ("email"), CONSTRAINT "UQ_fadc54bd9f66a1aa461c93d76e9" UNIQUE ("unsubscribeToken"), CONSTRAINT "UQ_815fefdec559e71a28dd2165af8" UNIQUE ("promoCode"), CONSTRAINT "PK_cbe0a7a9256c826f403c0236b67" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."scheduled_notifications_type_enum" AS ENUM('special', 'event')`);
-        await queryRunner.query(`CREATE TYPE "public"."scheduled_notifications_status_enum" AS ENUM('pending', 'sent', 'failed', 'cancelled')`);
-        await queryRunner.query(`CREATE TABLE "scheduled_notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."scheduled_notifications_type_enum" NOT NULL, "referenceId" uuid NOT NULL, "scheduledFor" TIMESTAMP WITH TIME ZONE NOT NULL, "status" "public"."scheduled_notifications_status_enum" NOT NULL DEFAULT 'pending', "sentAt" TIMESTAMP WITH TIME ZONE, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_9eb8b287229934bbd076a5d64f7" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."announcements_type_enum" AS ENUM('general', 'promotion', 'closure', 'menu_update', 'community', 'holiday')`);
-        await queryRunner.query(`CREATE TYPE "public"."announcements_priority_enum" AS ENUM('low', 'normal', 'high', 'urgent')`);
-        await queryRunner.query(`CREATE TYPE "public"."announcements_status_enum" AS ENUM('draft', 'sending', 'sent', 'failed')`);
-        await queryRunner.query(`CREATE TABLE "announcements" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "content" text NOT NULL, "type" "public"."announcements_type_enum" NOT NULL DEFAULT 'general', "priority" "public"."announcements_priority_enum" NOT NULL DEFAULT 'normal', "status" "public"."announcements_status_enum" NOT NULL DEFAULT 'draft', "recipientCount" integer NOT NULL DEFAULT '0', "sentAt" TIMESTAMP, "ctaText" character varying, "ctaUrl" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b3ad760876ff2e19d58e05dc8b0" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "party_menu_section_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "sectionId" uuid NOT NULL, "name" character varying NOT NULL, "description" text, "notes" character varying, "isAvailable" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_a0f2b92ee18e60fd4f150a5f28d" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "party_menu_sections" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "partyMenuId" uuid NOT NULL, "title" character varying, "sectionType" character varying NOT NULL DEFAULT 'fixed', "instruction" character varying, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_77f6574165c75a7980b7db1fc67" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "party_menus" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "menuType" character varying NOT NULL DEFAULT 'party', "pricePerPerson" numeric(8,2) NOT NULL, "minimumGuests" integer, "maximumGuests" integer, "description" text, "isActive" boolean NOT NULL DEFAULT true, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "pdfUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9ec1a69e7e38a94c65b62eb3e8b" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "family_meal_addons" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "familyMealId" uuid NOT NULL, "name" character varying(255) NOT NULL, "price" numeric(8,2) NOT NULL DEFAULT '0', "isAvailable" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', CONSTRAINT "PK_88e2a7cb834b7bcae565f8702a8" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "family_meals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(255) NOT NULL, "description" text, "serves" character varying(50) NOT NULL DEFAULT '4', "basePrice" numeric(8,2) NOT NULL, "priceLabel" character varying(50) NOT NULL DEFAULT '+tax', "mealType" character varying(50) NOT NULL DEFAULT 'combo', "availableFor" text array NOT NULL DEFAULT '{}', "items" text array NOT NULL DEFAULT '{}', "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "imageUrls" text array NOT NULL DEFAULT '{}', "pdfUrls" text array NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b1cda0623b9e8b9f492b4c10d6c" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "site_images" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "key" character varying NOT NULL, "label" character varying NOT NULL, "description" character varying, "category" character varying NOT NULL, "imageUrl" character varying NOT NULL, "defaultImageUrl" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_90b9bce7203930f60982af845f3" UNIQUE ("key"), CONSTRAINT "PK_97c9efa63cdcc9af0af46569f2e" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TYPE "public"."digital_menu_pdfs_category_enum" AS ENUM('food', 'drinks', 'wine', 'cocktails', 'desserts', 'specials', 'other')`);
-        await queryRunner.query(`CREATE TABLE "digital_menu_pdfs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text, "pdfUrl" character varying NOT NULL, "thumbnailUrl" character varying, "category" "public"."digital_menu_pdfs_category_enum" NOT NULL DEFAULT 'food', "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_09907109a11080dacd9038fe68d" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE "posters" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "imageUrl" character varying NOT NULL, "title" character varying, "description" text, "linkUrl" character varying, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9af0f091672031956b593689c52" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`ALTER TABLE "menu_categories" ADD CONSTRAINT "FK_9954ab46679109fc5d7fd98e575" FOREIGN KEY ("primaryCategoryId") REFERENCES "primary_categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "menu_item_measurements" ADD CONSTRAINT "FK_661d5b770c751d5815cb8cfd0dd" FOREIGN KEY ("menuItemId") REFERENCES "menu_items"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "menu_item_measurements" ADD CONSTRAINT "FK_1e6c7ba64e4d5de6e7405bb3a91" FOREIGN KEY ("measurementTypeId") REFERENCES "measurement_types"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "menu_items" ADD CONSTRAINT "FK_d56e5ccc298e8bf721f75a7eb96" FOREIGN KEY ("categoryId") REFERENCES "menu_categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "todos" ADD CONSTRAINT "FK_b228f3ddc1c12709653c0595e39" FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "stories" ADD CONSTRAINT "FK_25a054e14e44de74e3c35bc1f5e" FOREIGN KEY ("categoryId") REFERENCES "story_categories"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "party_menu_section_items" ADD CONSTRAINT "FK_b418dacb362d440b45926e53c2e" FOREIGN KEY ("sectionId") REFERENCES "party_menu_sections"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "party_menu_sections" ADD CONSTRAINT "FK_2824a29efb0f874241574a31878" FOREIGN KEY ("partyMenuId") REFERENCES "party_menus"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "family_meal_addons" ADD CONSTRAINT "FK_429bc1ac1e155b047e8843eb8fc" FOREIGN KEY ("familyMealId") REFERENCES "family_meals"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-    }
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "password" character varying NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "phone" character varying, "profileImage" character varying, "role" character varying NOT NULL DEFAULT 'admin', "isActive" boolean NOT NULL DEFAULT true, "passwordResetToken" character varying, "passwordResetTokenExpiry" TIMESTAMP, "isEmailVerified" boolean NOT NULL DEFAULT false, "emailVerificationToken" character varying, "emailVerificationTokenExpiry" TIMESTAMP, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "lastLoginAt" TIMESTAMP, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "primary_categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying, "imageUrl" character varying, "sortOrder" integer NOT NULL DEFAULT '0', "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_ec65b4cb8d57a45a8ed0ee0a648" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "menu_categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying, "imageUrl" character varying, "sortOrder" integer NOT NULL DEFAULT '0', "isActive" boolean NOT NULL DEFAULT true, "primaryCategoryId" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_124ae987900336f983881cb04e6" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "measurement_types" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(100) NOT NULL, "description" text, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_e335234f522d2f9dbf9dd486d76" UNIQUE ("name"), CONSTRAINT "PK_d3f60eb35311bc805dc20715608" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "menu_item_measurements" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "menuItemId" uuid NOT NULL, "measurementTypeId" uuid, "price" numeric(8,2) NOT NULL, "isAvailable" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b2253af6aedec88b638803aae52" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "menu_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text DEFAULT '', "price" numeric(8,2), "preparationTime" integer, "allergens" text array DEFAULT ARRAY[]::text[], "dietaryInfo" text array DEFAULT ARRAY[]::text[], "isAvailable" boolean NOT NULL DEFAULT true, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "sortOrder" integer NOT NULL DEFAULT '0', "categoryId" uuid, "hasMeasurements" boolean NOT NULL DEFAULT false, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_57e6188f929e5dc6919168620c8" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."specials_type_enum" AS ENUM('daily', 'everyday', 'weekend', 'game_time', 'day_time', 'chef', 'seasonal', 'limited_time')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."specials_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."specials_specialcategory_enum" AS ENUM('regular', 'late_night')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "specials" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "type" "public"."specials_type_enum" NOT NULL DEFAULT 'daily', "dayOfWeek" "public"."specials_dayofweek_enum", "specialCategory" "public"."specials_specialcategory_enum" DEFAULT 'regular', "displayStartDate" TIMESTAMP WITH TIME ZONE, "displayEndDate" TIMESTAMP WITH TIME ZONE, "specialStartDate" TIMESTAMP WITH TIME ZONE, "specialEndDate" TIMESTAMP WITH TIME ZONE, "isActive" boolean NOT NULL DEFAULT true, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_8c05b45b6cd6c1c263f8b74b627" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."events_type_enum" AS ENUM('live_music', 'sports_viewing', 'trivia_night', 'karaoke', 'private_party', 'special_event')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "events" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "type" "public"."events_type_enum" NOT NULL DEFAULT 'special_event', "displayStartDate" TIMESTAMP NOT NULL, "displayEndDate" TIMESTAMP NOT NULL, "eventStartDate" TIMESTAMP NOT NULL, "eventEndDate" TIMESTAMP NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "imageUrls" json, "ticketLink" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_40731c7151fe4be3116e45ddf73" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."opening_hours_dayofweek_enum" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "opening_hours" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "dayOfWeek" "public"."opening_hours_dayofweek_enum" NOT NULL, "openTime" TIME, "closeTime" TIME, "isClosedNextDay" boolean NOT NULL DEFAULT false, "isOpen" boolean NOT NULL DEFAULT true, "isActive" boolean NOT NULL DEFAULT true, "specialNote" text, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_09415e2b345103b1f5971464f85" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."todos_priority_enum" AS ENUM('low', 'medium', 'high', 'urgent')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."todos_status_enum" AS ENUM('pending', 'in_progress', 'completed', 'cancelled')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "todos" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text, "priority" "public"."todos_priority_enum" NOT NULL DEFAULT 'medium', "status" "public"."todos_status_enum" NOT NULL DEFAULT 'pending', "dueDate" TIMESTAMP, "createdById" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "completedAt" TIMESTAMP, CONSTRAINT "PK_ca8cafd59ca6faaf67995344225" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "story_categories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_5d714f3f0a746ab3e55fa0d6187" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "stories" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "categoryId" uuid NOT NULL, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_bb6f880b260ed96c452b32a39f0" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "subscribers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "subscriberNumber" integer NOT NULL, "email" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "unsubscribeToken" character varying NOT NULL, "subscribedAt" TIMESTAMP NOT NULL DEFAULT now(), "unsubscribedAt" TIMESTAMP, "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "promoCode" character varying(8), "promoCodeSent" boolean NOT NULL DEFAULT false, "promoSentAt" TIMESTAMP, "promoClaimed" boolean NOT NULL DEFAULT false, "promoClaimedAt" TIMESTAMP, CONSTRAINT "UQ_6792dc8046b50dd79bc84c0a68d" UNIQUE ("subscriberNumber"), CONSTRAINT "UQ_1a7163c08f0e57bd1c9821508b1" UNIQUE ("email"), CONSTRAINT "UQ_fadc54bd9f66a1aa461c93d76e9" UNIQUE ("unsubscribeToken"), CONSTRAINT "UQ_815fefdec559e71a28dd2165af8" UNIQUE ("promoCode"), CONSTRAINT "PK_cbe0a7a9256c826f403c0236b67" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."scheduled_notifications_type_enum" AS ENUM('special', 'event')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."scheduled_notifications_status_enum" AS ENUM('pending', 'sent', 'failed', 'cancelled')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "scheduled_notifications" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "public"."scheduled_notifications_type_enum" NOT NULL, "referenceId" uuid NOT NULL, "scheduledFor" TIMESTAMP WITH TIME ZONE NOT NULL, "status" "public"."scheduled_notifications_status_enum" NOT NULL DEFAULT 'pending', "sentAt" TIMESTAMP WITH TIME ZONE, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "PK_9eb8b287229934bbd076a5d64f7" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."announcements_type_enum" AS ENUM('general', 'promotion', 'closure', 'menu_update', 'community', 'holiday')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."announcements_priority_enum" AS ENUM('low', 'normal', 'high', 'urgent')`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."announcements_status_enum" AS ENUM('draft', 'sending', 'sent', 'failed')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "announcements" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "content" text NOT NULL, "type" "public"."announcements_type_enum" NOT NULL DEFAULT 'general', "priority" "public"."announcements_priority_enum" NOT NULL DEFAULT 'normal', "status" "public"."announcements_status_enum" NOT NULL DEFAULT 'draft', "recipientCount" integer NOT NULL DEFAULT '0', "sentAt" TIMESTAMP, "ctaText" character varying, "ctaUrl" character varying, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b3ad760876ff2e19d58e05dc8b0" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "party_menu_section_items" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "sectionId" uuid NOT NULL, "name" character varying NOT NULL, "description" text, "notes" character varying, "isAvailable" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_a0f2b92ee18e60fd4f150a5f28d" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "party_menu_sections" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "partyMenuId" uuid NOT NULL, "title" character varying, "sectionType" character varying NOT NULL DEFAULT 'fixed', "instruction" character varying, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_77f6574165c75a7980b7db1fc67" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "party_menus" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "menuType" character varying NOT NULL DEFAULT 'party', "pricePerPerson" numeric(8,2) NOT NULL, "minimumGuests" integer, "maximumGuests" integer, "description" text, "isActive" boolean NOT NULL DEFAULT true, "imageUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "pdfUrls" text array NOT NULL DEFAULT ARRAY[]::text[], "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9ec1a69e7e38a94c65b62eb3e8b" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "family_meal_addons" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "familyMealId" uuid NOT NULL, "name" character varying(255) NOT NULL, "price" numeric(8,2) NOT NULL DEFAULT '0', "isAvailable" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', CONSTRAINT "PK_88e2a7cb834b7bcae565f8702a8" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "family_meals" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying(255) NOT NULL, "description" text, "serves" character varying(50) NOT NULL DEFAULT '4', "basePrice" numeric(8,2) NOT NULL, "priceLabel" character varying(50) NOT NULL DEFAULT '+tax', "mealType" character varying(50) NOT NULL DEFAULT 'combo', "availableFor" text array NOT NULL DEFAULT '{}', "items" text array NOT NULL DEFAULT '{}', "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "imageUrls" text array NOT NULL DEFAULT '{}', "pdfUrls" text array NOT NULL DEFAULT '{}', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_b1cda0623b9e8b9f492b4c10d6c" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "site_images" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "key" character varying NOT NULL, "label" character varying NOT NULL, "description" character varying, "category" character varying NOT NULL, "imageUrl" character varying NOT NULL, "defaultImageUrl" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_90b9bce7203930f60982af845f3" UNIQUE ("key"), CONSTRAINT "PK_97c9efa63cdcc9af0af46569f2e" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE "public"."digital_menu_pdfs_category_enum" AS ENUM('food', 'drinks', 'wine', 'cocktails', 'desserts', 'specials', 'other')`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "digital_menu_pdfs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text, "pdfUrl" character varying NOT NULL, "thumbnailUrl" character varying, "category" "public"."digital_menu_pdfs_category_enum" NOT NULL DEFAULT 'food', "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_09907109a11080dacd9038fe68d" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `CREATE TABLE "posters" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "imageUrl" character varying NOT NULL, "title" character varying, "description" text, "linkUrl" character varying, "isActive" boolean NOT NULL DEFAULT true, "sortOrder" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_9af0f091672031956b593689c52" PRIMARY KEY ("id"))`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_categories" ADD CONSTRAINT "FK_9954ab46679109fc5d7fd98e575" FOREIGN KEY ("primaryCategoryId") REFERENCES "primary_categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_item_measurements" ADD CONSTRAINT "FK_661d5b770c751d5815cb8cfd0dd" FOREIGN KEY ("menuItemId") REFERENCES "menu_items"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_item_measurements" ADD CONSTRAINT "FK_1e6c7ba64e4d5de6e7405bb3a91" FOREIGN KEY ("measurementTypeId") REFERENCES "measurement_types"("id") ON DELETE SET NULL ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_items" ADD CONSTRAINT "FK_d56e5ccc298e8bf721f75a7eb96" FOREIGN KEY ("categoryId") REFERENCES "menu_categories"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "todos" ADD CONSTRAINT "FK_b228f3ddc1c12709653c0595e39" FOREIGN KEY ("createdById") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "stories" ADD CONSTRAINT "FK_25a054e14e44de74e3c35bc1f5e" FOREIGN KEY ("categoryId") REFERENCES "story_categories"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "party_menu_section_items" ADD CONSTRAINT "FK_b418dacb362d440b45926e53c2e" FOREIGN KEY ("sectionId") REFERENCES "party_menu_sections"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "party_menu_sections" ADD CONSTRAINT "FK_2824a29efb0f874241574a31878" FOREIGN KEY ("partyMenuId") REFERENCES "party_menus"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "family_meal_addons" ADD CONSTRAINT "FK_429bc1ac1e155b047e8843eb8fc" FOREIGN KEY ("familyMealId") REFERENCES "family_meals"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+    );
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "family_meal_addons" DROP CONSTRAINT "FK_429bc1ac1e155b047e8843eb8fc"`);
-        await queryRunner.query(`ALTER TABLE "party_menu_sections" DROP CONSTRAINT "FK_2824a29efb0f874241574a31878"`);
-        await queryRunner.query(`ALTER TABLE "party_menu_section_items" DROP CONSTRAINT "FK_b418dacb362d440b45926e53c2e"`);
-        await queryRunner.query(`ALTER TABLE "stories" DROP CONSTRAINT "FK_25a054e14e44de74e3c35bc1f5e"`);
-        await queryRunner.query(`ALTER TABLE "todos" DROP CONSTRAINT "FK_b228f3ddc1c12709653c0595e39"`);
-        await queryRunner.query(`ALTER TABLE "menu_items" DROP CONSTRAINT "FK_d56e5ccc298e8bf721f75a7eb96"`);
-        await queryRunner.query(`ALTER TABLE "menu_item_measurements" DROP CONSTRAINT "FK_1e6c7ba64e4d5de6e7405bb3a91"`);
-        await queryRunner.query(`ALTER TABLE "menu_item_measurements" DROP CONSTRAINT "FK_661d5b770c751d5815cb8cfd0dd"`);
-        await queryRunner.query(`ALTER TABLE "menu_categories" DROP CONSTRAINT "FK_9954ab46679109fc5d7fd98e575"`);
-        await queryRunner.query(`DROP TABLE "posters"`);
-        await queryRunner.query(`DROP TABLE "digital_menu_pdfs"`);
-        await queryRunner.query(`DROP TYPE "public"."digital_menu_pdfs_category_enum"`);
-        await queryRunner.query(`DROP TABLE "site_images"`);
-        await queryRunner.query(`DROP TABLE "family_meals"`);
-        await queryRunner.query(`DROP TABLE "family_meal_addons"`);
-        await queryRunner.query(`DROP TABLE "party_menus"`);
-        await queryRunner.query(`DROP TABLE "party_menu_sections"`);
-        await queryRunner.query(`DROP TABLE "party_menu_section_items"`);
-        await queryRunner.query(`DROP TABLE "announcements"`);
-        await queryRunner.query(`DROP TYPE "public"."announcements_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."announcements_priority_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."announcements_type_enum"`);
-        await queryRunner.query(`DROP TABLE "scheduled_notifications"`);
-        await queryRunner.query(`DROP TYPE "public"."scheduled_notifications_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."scheduled_notifications_type_enum"`);
-        await queryRunner.query(`DROP TABLE "subscribers"`);
-        await queryRunner.query(`DROP TABLE "stories"`);
-        await queryRunner.query(`DROP TABLE "story_categories"`);
-        await queryRunner.query(`DROP TABLE "todos"`);
-        await queryRunner.query(`DROP TYPE "public"."todos_status_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."todos_priority_enum"`);
-        await queryRunner.query(`DROP TABLE "opening_hours"`);
-        await queryRunner.query(`DROP TYPE "public"."opening_hours_dayofweek_enum"`);
-        await queryRunner.query(`DROP TABLE "events"`);
-        await queryRunner.query(`DROP TYPE "public"."events_type_enum"`);
-        await queryRunner.query(`DROP TABLE "specials"`);
-        await queryRunner.query(`DROP TYPE "public"."specials_specialcategory_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."specials_dayofweek_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."specials_type_enum"`);
-        await queryRunner.query(`DROP TABLE "menu_items"`);
-        await queryRunner.query(`DROP TABLE "menu_item_measurements"`);
-        await queryRunner.query(`DROP TABLE "measurement_types"`);
-        await queryRunner.query(`DROP TABLE "menu_categories"`);
-        await queryRunner.query(`DROP TABLE "primary_categories"`);
-        await queryRunner.query(`DROP TABLE "users"`);
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE "family_meal_addons" DROP CONSTRAINT "FK_429bc1ac1e155b047e8843eb8fc"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "party_menu_sections" DROP CONSTRAINT "FK_2824a29efb0f874241574a31878"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "party_menu_section_items" DROP CONSTRAINT "FK_b418dacb362d440b45926e53c2e"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "stories" DROP CONSTRAINT "FK_25a054e14e44de74e3c35bc1f5e"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "todos" DROP CONSTRAINT "FK_b228f3ddc1c12709653c0595e39"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_items" DROP CONSTRAINT "FK_d56e5ccc298e8bf721f75a7eb96"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_item_measurements" DROP CONSTRAINT "FK_1e6c7ba64e4d5de6e7405bb3a91"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_item_measurements" DROP CONSTRAINT "FK_661d5b770c751d5815cb8cfd0dd"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "menu_categories" DROP CONSTRAINT "FK_9954ab46679109fc5d7fd98e575"`,
+    );
+    await queryRunner.query(`DROP TABLE "posters"`);
+    await queryRunner.query(`DROP TABLE "digital_menu_pdfs"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."digital_menu_pdfs_category_enum"`,
+    );
+    await queryRunner.query(`DROP TABLE "site_images"`);
+    await queryRunner.query(`DROP TABLE "family_meals"`);
+    await queryRunner.query(`DROP TABLE "family_meal_addons"`);
+    await queryRunner.query(`DROP TABLE "party_menus"`);
+    await queryRunner.query(`DROP TABLE "party_menu_sections"`);
+    await queryRunner.query(`DROP TABLE "party_menu_section_items"`);
+    await queryRunner.query(`DROP TABLE "announcements"`);
+    await queryRunner.query(`DROP TYPE "public"."announcements_status_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."announcements_priority_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."announcements_type_enum"`);
+    await queryRunner.query(`DROP TABLE "scheduled_notifications"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."scheduled_notifications_status_enum"`,
+    );
+    await queryRunner.query(
+      `DROP TYPE "public"."scheduled_notifications_type_enum"`,
+    );
+    await queryRunner.query(`DROP TABLE "subscribers"`);
+    await queryRunner.query(`DROP TABLE "stories"`);
+    await queryRunner.query(`DROP TABLE "story_categories"`);
+    await queryRunner.query(`DROP TABLE "todos"`);
+    await queryRunner.query(`DROP TYPE "public"."todos_status_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."todos_priority_enum"`);
+    await queryRunner.query(`DROP TABLE "opening_hours"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."opening_hours_dayofweek_enum"`,
+    );
+    await queryRunner.query(`DROP TABLE "events"`);
+    await queryRunner.query(`DROP TYPE "public"."events_type_enum"`);
+    await queryRunner.query(`DROP TABLE "specials"`);
+    await queryRunner.query(
+      `DROP TYPE "public"."specials_specialcategory_enum"`,
+    );
+    await queryRunner.query(`DROP TYPE "public"."specials_dayofweek_enum"`);
+    await queryRunner.query(`DROP TYPE "public"."specials_type_enum"`);
+    await queryRunner.query(`DROP TABLE "menu_items"`);
+    await queryRunner.query(`DROP TABLE "menu_item_measurements"`);
+    await queryRunner.query(`DROP TABLE "measurement_types"`);
+    await queryRunner.query(`DROP TABLE "menu_categories"`);
+    await queryRunner.query(`DROP TABLE "primary_categories"`);
+    await queryRunner.query(`DROP TABLE "users"`);
+  }
 }

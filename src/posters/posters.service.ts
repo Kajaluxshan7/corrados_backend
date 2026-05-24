@@ -14,7 +14,7 @@ export interface CreatePosterDto {
   sortOrder?: number;
 }
 
-export interface UpdatePosterDto extends Partial<CreatePosterDto> {}
+export type UpdatePosterDto = Partial<CreatePosterDto>;
 
 @Injectable()
 export class PostersService {
@@ -68,7 +68,8 @@ export class PostersService {
 
   async remove(id: string): Promise<void> {
     const item = await this.findById(id);
-    if (item.imageUrl) await this.uploadService.deleteFile(item.imageUrl).catch(() => {});
+    if (item.imageUrl)
+      await this.uploadService.deleteFile(item.imageUrl).catch(() => {});
     await this.repo.remove(item);
     this.wsGateway.emitToAll(WsEvent.POSTERS_UPDATED, {
       action: 'deleted',

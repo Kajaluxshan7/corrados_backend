@@ -121,7 +121,10 @@ export class MenuController {
     try {
       return await this.menuService.findAllMenuItems();
     } catch (error) {
-      this.logger.error('Error in GET /menu/items', error?.stack || error);
+      this.logger.error(
+        'Error in GET /menu/items',
+        (error as Error)?.stack || error,
+      );
       throw new InternalServerErrorException('Failed to fetch menu items');
     }
   }
@@ -133,7 +136,7 @@ export class MenuController {
     } catch (error) {
       this.logger.error(
         `Error in GET /menu/items/${id}`,
-        error?.stack || error,
+        (error as Error)?.stack || error,
       );
       throw new InternalServerErrorException('Failed to fetch menu item');
     }
@@ -162,7 +165,7 @@ export class MenuController {
         `PATCH /menu/items/${id} payload:`,
         JSON.stringify(updateMenuItemDto),
       );
-    } catch (_) {
+    } catch {
       // ignore stringify errors
     }
 
@@ -175,7 +178,7 @@ export class MenuController {
     } catch (error) {
       this.logger.error(
         `Error updating menu item ${id}:`,
-        (error && (error.stack || error)) as any,
+        error && ((error as Error).stack || error),
       );
       throw error;
     }

@@ -24,7 +24,10 @@ export class TodosService {
     private wsGateway: AppWebSocketGateway,
   ) {}
 
-  async create(createTodoDto: CreateTodoDto, userId: string): Promise<Todo> {
+  async create(
+    createTodoDto: CreateTodoDto,
+    userId: string | null,
+  ): Promise<Todo> {
     const todo = new Todo();
 
     // Basic payload validation to avoid unexpected DB errors
@@ -44,7 +47,8 @@ export class TodosService {
     todo.priority = priority;
     todo.status = status;
     // Accept either Date or ISO string for dueDate
-    const incomingDue = (createTodoDto.dueDate as any) || null;
+    const incomingDue: Date | string | null =
+      (createTodoDto.dueDate as Date | string | null | undefined) ?? null;
     if (incomingDue === null) {
       todo.dueDate = null;
     } else if (typeof incomingDue === 'string') {
@@ -72,7 +76,7 @@ export class TodosService {
     } catch (err) {
       // Non-fatal: proceed without relation if user lookup fails
       this.logger.warn('User lookup failed when creating todo:', err);
-      todo.createdById = userId;
+      if (userId) todo.createdById = userId;
     }
 
     try {
@@ -84,7 +88,7 @@ export class TodosService {
       return saved;
     } catch (err) {
       // Log the underlying error and throw a clearer exception
-      this.logger.error('Error saving todo:', err as any);
+      this.logger.error('Error saving todo:', err);
       throw new InternalServerErrorException('Failed to save todo');
     }
   }

@@ -25,10 +25,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const httpEx: HttpException = exception;
       status = httpEx.getStatus();
-      const resp = httpEx.getResponse() as any;
+      const resp = httpEx.getResponse() as { message?: unknown };
       // ValidationPipe returns resp.message as a string[] — join for display
-      const raw = resp?.message ?? httpEx.message;
-      message = Array.isArray(raw) ? raw.join('; ') : String(raw);
+
+      const raw: unknown = resp?.message ?? httpEx.message;
+      message = Array.isArray(raw) ? (raw as string[]).join('; ') : String(raw);
     } else {
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       // Never expose raw system/SMTP errors to the client
@@ -37,14 +38,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log the error with ID and request context
     try {
-      const stack = (exception as any)?.stack || null;
+      const err = exception as {
+        stack?: string;
+        name?: string;
+        message?: string;
+      };
       const exceptionData = {
         exception: {
-          name: (exception as any)?.name || null,
-          message: (exception as any)?.message || null,
-          stack,
+          name: err?.name || null,
+          message: err?.message || null,
+          stack: err?.stack || null,
         },
-        body: req.body,
+        body: req.body as unknown,
         params: req.params,
         query: req.query,
       };
@@ -52,8 +57,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `ErrorID=${errorId} ${req.method} ${req.url} ${message}`,
         JSON.stringify(exceptionData),
       );
-    } catch (err) {
-      this.logger.error(`Error logging exception: ${err as any}`);
+    } catch (logErr) {
+      this.logger.error(`Error logging exception: ${String(logErr)}`);
     }
 
     // Return standard JSON error structure with errorId

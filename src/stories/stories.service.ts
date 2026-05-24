@@ -70,10 +70,7 @@ export class StoriesService {
           try {
             await this.uploadService.deleteFile(imageUrl);
           } catch (error) {
-            this.logger.error(
-              `Failed to delete image ${imageUrl}:`,
-              error as any,
-            );
+            this.logger.error(`Failed to delete image ${imageUrl}:`, error);
           }
         }
       }
@@ -188,10 +185,7 @@ export class StoriesService {
         try {
           await this.uploadService.deleteFile(imageUrl);
         } catch (error) {
-          this.logger.error(
-            `Failed to delete image ${imageUrl}:`,
-            error as any,
-          );
+          this.logger.error(`Failed to delete image ${imageUrl}:`, error);
         }
       }
     }

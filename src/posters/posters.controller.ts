@@ -8,7 +8,11 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { PostersService, CreatePosterDto, UpdatePosterDto } from './posters.service';
+import {
+  PostersService,
+  CreatePosterDto,
+  UpdatePosterDto,
+} from './posters.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('posters')

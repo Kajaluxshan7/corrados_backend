@@ -9,7 +9,11 @@
   ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { SpecialType, DayOfWeek, SpecialCategory } from '../../entities/special.entity';
+import {
+  SpecialType,
+  DayOfWeek,
+  SpecialCategory,
+} from '../../entities/special.entity';
 
 export class CreateSpecialDto {
   @IsString()

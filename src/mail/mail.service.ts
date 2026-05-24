@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
 import { getRequiredEnv } from '../config/env.validation';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo>;
   private readonly emailFrom: string;
 
   constructor() {
@@ -30,7 +31,7 @@ export class MailService {
     // Verify transporter — failure is normal for Gmail app-passwords and does
     // NOT mean sending will fail. Never fall back to Ethereal (it silently
     // swallows emails instead of delivering them to real inboxes).
-    (async () => {
+    void (async () => {
       try {
         await this.transporter.verify();
         this.logger.log('SMTP transporter verified');
@@ -140,7 +141,7 @@ export class MailService {
                 </div>
               </div>
       `),
-    } as any;
+    } satisfies nodemailer.SendMailOptions;
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
@@ -174,7 +175,7 @@ export class MailService {
                 </div>
               </div>
       `),
-    } as any;
+    } satisfies nodemailer.SendMailOptions;
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
@@ -215,7 +216,7 @@ export class MailService {
                 </div>
               </div>
       `),
-    } as any;
+    } satisfies nodemailer.SendMailOptions;
 
     if (getRequiredEnv('NODE_ENV') !== 'production') {
       this.logger.debug(
@@ -261,7 +262,7 @@ export class MailService {
                 <p style="margin: 0; font-size: 14px; color: #5C524D; text-align: center; line-height: 1.5;">Welcome to the team!</p>
               </div>
       `),
-    } as any;
+    } satisfies nodemailer.SendMailOptions;
 
     try {
       const info = await this.transporter.sendMail(mailOptions);

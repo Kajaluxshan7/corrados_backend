@@ -142,7 +142,7 @@ export class PartyMenuService {
     sectionId: string,
     dto: UpdatePartySectionDto,
   ): Promise<PartyMenuSection> {
-    const section = await this.findSection(sectionId);
+    await this.findSection(sectionId);
     const { items: _items, ...sectionData } = dto;
     await this.sectionRepository.update(sectionId, sectionData);
     return this.findSection(sectionId);

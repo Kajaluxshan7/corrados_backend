@@ -72,7 +72,9 @@ export class UploadController {
         urls: uploadedUrls,
       };
     } catch (error) {
-      throw new BadRequestException(`Upload failed: ${error.message}`);
+      throw new BadRequestException(
+        `Upload failed: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -98,9 +100,7 @@ export class UploadController {
     const allowedMimeTypes = ['application/pdf'];
     for (const file of files) {
       if (!allowedMimeTypes.includes(file.mimetype)) {
-        throw new BadRequestException(
-          `File ${file.originalname} is not a PDF`,
-        );
+        throw new BadRequestException(`File ${file.originalname} is not a PDF`);
       }
       const ext = file.originalname.toLowerCase().split('.').pop();
       if (ext !== 'pdf') {
@@ -122,7 +122,9 @@ export class UploadController {
         urls: uploadedUrls,
       };
     } catch (error) {
-      throw new BadRequestException(`Upload failed: ${error.message}`);
+      throw new BadRequestException(
+        `Upload failed: ${(error as Error).message}`,
+      );
     }
   }
 
@@ -139,7 +141,9 @@ export class UploadController {
         message: 'Images deleted successfully',
       };
     } catch (error) {
-      throw new BadRequestException(`Delete failed: ${error.message}`);
+      throw new BadRequestException(
+        `Delete failed: ${(error as Error).message}`,
+      );
     }
   }
 }

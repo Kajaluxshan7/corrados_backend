@@ -65,7 +65,9 @@ export class UploadService {
 
       // Return the URL path for accessing the file
       const relativePath = `/uploads/${folder}/${uniqueFileName}`;
-      const fullUrl = this.baseUrl ? `${this.baseUrl}${relativePath}` : relativePath;
+      const fullUrl = this.baseUrl
+        ? `${this.baseUrl}${relativePath}`
+        : relativePath;
 
       this.logger.log(`File uploaded successfully: ${relativePath}`);
       return fullUrl;

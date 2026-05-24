@@ -44,17 +44,19 @@ export class TodosController {
   }
 
   @Post()
-  create(@Body() createTodoDto: CreateTodoDto, @Request() req: any) {
+  create(
+    @Body() createTodoDto: CreateTodoDto,
+    @Request() req: { user?: { id?: string } },
+  ) {
     try {
       // Log incoming payload and user for debugging
       this.logger.debug('Create todo request body:', createTodoDto as any);
-      const userId = (req as any)?.user?.id ?? null;
-      this.logger.debug('Create todo requested by user:', userId as any);
+      const userId = req?.user?.id ?? null;
+      this.logger.debug('Create todo requested by user:', userId);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return this.todosService.create(createTodoDto, userId);
     } catch (err) {
-      this.logger.error('Error in TodosController.create:', err as any);
+      this.logger.error('Error in TodosController.create:', err);
       // Surface inner message for easier debugging in dev
       const msg = err instanceof Error ? err.message : 'Internal server error';
       throw new InternalServerErrorException(msg);

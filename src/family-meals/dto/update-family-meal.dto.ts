@@ -3,15 +3,7 @@ import {
   CreateFamilyMealDto,
   CreateFamilyMealAddonDto,
 } from './create-family-meal.dto';
-import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsNumber,
-  Min,
-  ValidateNested,
-  IsArray,
-} from 'class-validator';
+import { IsString, IsOptional, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateFamilyMealAddonDto extends PartialType(

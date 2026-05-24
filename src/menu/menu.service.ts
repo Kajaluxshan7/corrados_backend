@@ -306,7 +306,11 @@ export class MenuService {
     return this.menuItemRepository.find({
       where: { categoryId },
       order: { sortOrder: 'ASC' },
-      relations: ['category', 'measurements', 'measurements.measurementTypeEntity'],
+      relations: [
+        'category',
+        'measurements',
+        'measurements.measurementTypeEntity',
+      ],
     });
   }
 

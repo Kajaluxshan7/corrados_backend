@@ -1,11 +1,11 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class FixSiteImageUrls1778901000000 implements MigrationInterface {
-    name = 'FixSiteImageUrls1778901000000'
+  name = 'FixSiteImageUrls1778901000000';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        // Fix the 3 broken seeded records (only if they still point to the missing files)
-        await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    // Fix the 3 broken seeded records (only if they still point to the missing files)
+    await queryRunner.query(`
             UPDATE site_images
             SET "imageUrl" = '/orrdos/interior-main-dining.jpg',
                 "defaultImageUrl" = '/orrdos/interior-main-dining.jpg'
@@ -13,7 +13,7 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               AND "imageUrl" = '/restaurant/hero-home.jpg'
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             UPDATE site_images
             SET "imageUrl" = '/restaurant/owner_and_logo.jpg',
                 "defaultImageUrl" = '/restaurant/owner_and_logo.jpg'
@@ -21,7 +21,7 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               AND "imageUrl" = '/restaurant/hero-about.jpg'
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             UPDATE site_images
             SET "imageUrl" = '/restaurant/gnocchi-tomato-cream.jpeg',
                 "defaultImageUrl" = '/restaurant/gnocchi-tomato-cream.jpeg'
@@ -29,9 +29,9 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               AND "imageUrl" = '/restaurant/nav-menus.jpg'
         `);
 
-        // Insert all remaining site-image keys that may not yet exist in DB.
-        // ON CONFLICT DO NOTHING preserves any images already uploaded via the admin dashboard.
-        await queryRunner.query(`
+    // Insert all remaining site-image keys that may not yet exist in DB.
+    // ON CONFLICT DO NOTHING preserves any images already uploaded via the admin dashboard.
+    await queryRunner.query(`
             INSERT INTO site_images (key, label, description, category, "imageUrl", "defaultImageUrl")
             VALUES
               -- Heroes
@@ -78,11 +78,11 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               ('gift_card_just_because', 'Gift Card – Just Because', 'Just because gift card image',              'gift_cards',      '/restaurant/chocolate-lava-cake.jpeg',          '/restaurant/chocolate-lava-cake.jpeg')
             ON CONFLICT (key) DO NOTHING
         `);
-    }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        // Restore the 3 previously broken seeded records back to their (incorrect) original URLs
-        await queryRunner.query(`
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Restore the 3 previously broken seeded records back to their (incorrect) original URLs
+    await queryRunner.query(`
             UPDATE site_images
             SET "imageUrl" = '/restaurant/hero-home.jpg',
                 "defaultImageUrl" = '/restaurant/hero-home.jpg'
@@ -90,7 +90,7 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               AND "imageUrl" = '/orrdos/interior-main-dining.jpg'
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             UPDATE site_images
             SET "imageUrl" = '/restaurant/hero-about.jpg',
                 "defaultImageUrl" = '/restaurant/hero-about.jpg'
@@ -98,7 +98,7 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               AND "imageUrl" = '/restaurant/owner_and_logo.jpg'
         `);
 
-        await queryRunner.query(`
+    await queryRunner.query(`
             UPDATE site_images
             SET "imageUrl" = '/restaurant/nav-menus.jpg',
                 "defaultImageUrl" = '/restaurant/nav-menus.jpg'
@@ -106,8 +106,8 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               AND "imageUrl" = '/restaurant/gnocchi-tomato-cream.jpeg'
         `);
 
-        // Remove all the newly inserted keys (those that didn't exist before this migration)
-        await queryRunner.query(`
+    // Remove all the newly inserted keys (those that didn't exist before this migration)
+    await queryRunner.query(`
             DELETE FROM site_images
             WHERE key IN (
               'hero_menus','hero_specials','hero_events','hero_family_meals','hero_party_menus',
@@ -120,5 +120,5 @@ export class FixSiteImageUrls1778901000000 implements MigrationInterface {
               'gift_card_thank_you','gift_card_just_because'
             )
         `);
-    }
+  }
 }

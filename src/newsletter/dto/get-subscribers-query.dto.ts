@@ -24,7 +24,14 @@ export class GetSubscribersQueryDto {
   limit?: number = 10;
 
   @IsOptional()
-  @IsIn(['all', 'active', 'unsubscribed', 'promo_pending', 'promo_sent', 'promo_claimed'])
+  @IsIn([
+    'all',
+    'active',
+    'unsubscribed',
+    'promo_pending',
+    'promo_sent',
+    'promo_claimed',
+  ])
   status?: SubscriberFilterStatus = 'all';
 
   @IsOptional()

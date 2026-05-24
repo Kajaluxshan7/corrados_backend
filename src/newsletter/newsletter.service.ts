@@ -14,7 +14,7 @@ const PDFDocument = require('pdfkit') as typeof import('pdfkit');
 import { Subscriber } from '../entities/subscriber.entity';
 import { SubscribeDto, GetSubscribersQueryDto } from './dto';
 import { getRequiredEnv, getOptionalEnv } from '../config/env.validation';
-import { ILike, IsNull, Not } from 'typeorm';
+import { ILike } from 'typeorm';
 
 @Injectable()
 export class NewsletterService {
@@ -56,7 +56,7 @@ export class NewsletterService {
     });
 
     // Verify transporter
-    (async () => {
+    void (async () => {
       try {
         await this.transporter.verify();
         this.logger.log('Newsletter SMTP transporter verified');
@@ -707,9 +707,14 @@ export class NewsletterService {
       doc
         .fillColor('#888')
         .fontSize(9)
-        .text(`Generated: ${generatedAt}  |  Filter: ${status}  |  Total: ${subscribers.length}`, 40, 62, {
-          align: 'left',
-        });
+        .text(
+          `Generated: ${generatedAt}  |  Filter: ${status}  |  Total: ${subscribers.length}`,
+          40,
+          62,
+          {
+            align: 'left',
+          },
+        );
 
       doc.moveDown(3);
 
@@ -785,12 +790,10 @@ export class NewsletterService {
       doc
         .fillColor('#aaa')
         .fontSize(8)
-        .text(
-          `Corrado's Restaurant — Confidential`,
-          40,
-          doc.page.height - 40,
-          { align: 'center', width: doc.page.width - 80 },
-        );
+        .text(`Corrado's Restaurant — Confidential`, 40, doc.page.height - 40, {
+          align: 'center',
+          width: doc.page.width - 80,
+        });
 
       doc.end();
     });
@@ -802,10 +805,11 @@ export class NewsletterService {
    * Get the next sequential subscriber number.
    */
   private async getNextSubscriberNumber(): Promise<number> {
-    const result = await this.subscriberRepository
-      .createQueryBuilder('subscriber')
-      .select('COALESCE(MAX(subscriber.subscriberNumber), 0)', 'maxNum')
-      .getRawOne();
+    const result: { maxNum: number } | undefined =
+      await this.subscriberRepository
+        .createQueryBuilder('subscriber')
+        .select('COALESCE(MAX(subscriber.subscriberNumber), 0)', 'maxNum')
+        .getRawOne<{ maxNum: number }>();
     return (result?.maxNum ?? 0) + 1;
   }
 
@@ -873,8 +877,8 @@ export class NewsletterService {
           <!-- Header -->
           <tr>
             <td align="center" style="background-color: #FFFCF8; padding: 36px 32px 28px; border-bottom: 1px solid rgba(42,21,9,0.06);">
-              <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
-              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2A1509; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado\'s</p>
+              <img src="${this.logoUrl}" alt="Corrado's Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
+              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2A1509; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado's</p>
               <p style="margin: 6px 0 0; font-size: 11px; color: #C87941; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;">&#9733;&ensp;Est. 2010&ensp;&#9733;</p>
             </td>
           </tr>
@@ -966,7 +970,7 @@ export class NewsletterService {
                 </tr>
                 <tr>
                   <td align="center" style="padding: 18px 0 14px;">
-                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #6A3A1E; letter-spacing: 0.3px;">Corrado\'s Restaurant &amp; Bar</p>
+                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #6A3A1E; letter-spacing: 0.3px;">Corrado's Restaurant &amp; Bar</p>
                     <p style="margin: 0 0 2px; font-size: 12px; color: rgba(42,21,9,0.45);">38 Baldwin Street, Whitby, ON L1M 1A2</p>
                     <p style="margin: 0; font-size: 12px; color: rgba(42,21,9,0.45);">
                       <a href="tel:+19056553100" style="color: rgba(42,21,9,0.45); text-decoration: none;">(905) 655-3100</a>&ensp;&#183;&ensp;
@@ -1006,12 +1010,14 @@ export class NewsletterService {
     html: string,
   ): Promise<void> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const info = await this.transporter.sendMail({
         from: this.emailFrom,
         to,
         subject,
         html,
       } as any);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       const preview = nodemailer.getTestMessageUrl(info);
       if (preview) this.logger.log(`Preview URL: ${preview}`);
     } catch (err) {
@@ -1106,8 +1112,8 @@ export class NewsletterService {
           <!-- Header - warm cream with subtle branding -->
           <tr>
             <td align="center" style="background-color: #FFFCF8; padding: 36px 32px 28px; border-bottom: 1px solid rgba(42,21,9,0.06);">
-              <img src="${this.logoUrl}" alt="Corrado\'s Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
-              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2A1509; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado\'s</p>
+              <img src="${this.logoUrl}" alt="Corrado's Restaurant" width="48" style="width: 48px; height: auto; margin-bottom: 12px;" />
+              <p style="margin: 0; font-size: 14px; font-weight: 700; color: #2A1509; letter-spacing: 3px; text-transform: uppercase; font-family: Georgia, 'Times New Roman', serif;">Corrado's</p>
               <p style="margin: 6px 0 0; font-size: 11px; color: #C87941; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 500;">&#9733;&ensp;Est. 2010&ensp;&#9733;</p>
             </td>
           </tr>
@@ -1190,7 +1196,7 @@ export class NewsletterService {
                 <!-- Address & contact -->
                 <tr>
                   <td align="center" style="padding: 18px 0 14px;">
-                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #6A3A1E; letter-spacing: 0.3px;">Corrado\'s Restaurant &amp; Bar</p>
+                    <p style="margin: 0 0 4px; font-size: 12px; font-weight: 600; color: #6A3A1E; letter-spacing: 0.3px;">Corrado's Restaurant &amp; Bar</p>
                     <p style="margin: 0 0 2px; font-size: 12px; color: rgba(42,21,9,0.45);">38 Baldwin Street, Whitby, ON L1M 1A2</p>
                     <p style="margin: 0; font-size: 12px; color: rgba(42,21,9,0.45);">
                       <a href="tel:+19056553100" style="color: rgba(42,21,9,0.45); text-decoration: none;">(905) 655-3100</a>&ensp;&#183;&ensp;

@@ -94,7 +94,7 @@ export class NotificationSchedulerService {
       new Date(displayStartDate),
     );
     this.logger.log(
-      `Scheduled ${type} notification for ${referenceId} at ${displayStartDate}`,
+      `Scheduled ${type} notification for ${referenceId} at ${String(displayStartDate)}`,
     );
     return false;
   }

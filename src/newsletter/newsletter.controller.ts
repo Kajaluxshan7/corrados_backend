@@ -76,7 +76,10 @@ export class NewsletterController {
   sendPromoCode(@Param('id') _id: string) {
     // FEATURE DISABLED: Send promo code is temporarily turned off.
     // To re-enable, remove this block and restore: return this.newsletterService.sendPromoCode(_id);
-    throw new HttpException('Send promo code feature is currently disabled.', HttpStatus.SERVICE_UNAVAILABLE);
+    throw new HttpException(
+      'Send promo code feature is currently disabled.',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   }
 
   @Patch('subscribers/:id/claim-promo')

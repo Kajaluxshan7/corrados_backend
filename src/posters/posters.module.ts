@@ -7,11 +7,7 @@ import { UploadModule } from '../upload/upload.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Poster]),
-    UploadModule,
-    WebSocketModule,
-  ],
+  imports: [TypeOrmModule.forFeature([Poster]), UploadModule, WebSocketModule],
   controllers: [PostersController],
   providers: [PostersService],
   exports: [PostersService],

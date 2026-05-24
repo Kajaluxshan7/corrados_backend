@@ -8,7 +8,11 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { DigitalMenuService, CreateDigitalMenuPdfDto, UpdateDigitalMenuPdfDto } from './digital-menu.service';
+import {
+  DigitalMenuService,
+  CreateDigitalMenuPdfDto,
+  UpdateDigitalMenuPdfDto,
+} from './digital-menu.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('digital-menu')

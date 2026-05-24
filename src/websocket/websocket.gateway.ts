@@ -117,7 +117,11 @@ export class AppWebSocketGateway
       const clientType = (client.handshake.query?.type as string) || 'public';
 
       if (token) {
-        const payload = this.jwtService.verify(token, {
+        const payload = this.jwtService.verify<{
+          sub: string;
+          role: string;
+          email: string;
+        }>(token, {
           secret: getRequiredEnv('JWT_SECRET'),
         });
         this.connectedClients.set(client.id, {
@@ -127,9 +131,9 @@ export class AppWebSocketGateway
         });
 
         // Join role-based rooms for targeted events
-        client.join('authenticated');
-        client.join(`role:${payload.role}`);
-        client.join(`user:${payload.sub}`);
+        await client.join('authenticated');
+        await client.join(`role:${payload.role}`);
+        await client.join(`user:${payload.sub}`);
 
         this.logger.log(
           `Authenticated client connected: ${client.id} (${payload.email}, ${clientType})`,
@@ -137,13 +141,13 @@ export class AppWebSocketGateway
       } else {
         // Public (unauthenticated) connections - allowed for frontend
         this.connectedClients.set(client.id, { type: 'public' });
-        client.join('public');
+        await client.join('public');
         this.logger.log(`Public client connected: ${client.id}`);
       }
     } catch {
       // Invalid token - treat as public client
       this.connectedClients.set(client.id, { type: 'public' });
-      client.join('public');
+      await client.join('public');
       this.logger.debug(`Client connected without valid auth: ${client.id}`);
     }
   }

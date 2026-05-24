@@ -104,7 +104,7 @@ if (require.main === module) {
       process.exit(0);
     })
     .catch((error) => {
-      Logger.error('❌ Error synchronizing schema:', error as any);
+      Logger.error('❌ Error synchronizing schema:', error);
       process.exit(1);
     });
 }

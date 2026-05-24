@@ -30,7 +30,7 @@ export class DashboardService {
     private readonly openingHoursRepository: Repository<OpeningHours>,
   ) {}
 
-  async getSummary(user: any) {
+  async getSummary(user: { role: string }) {
     const userFilter =
       user.role !== 'super_admin' ? { role: Not('super_admin') } : {};
     const userActiveFilter =

@@ -126,7 +126,7 @@ export class AuthService {
     try {
       await this.generateAndSendVerificationEmail(user);
       emailSent = true;
-    } catch (err) {
+    } catch {
       // Already logged; proceed without blocking registration
       emailSent = false;
     }
@@ -243,7 +243,7 @@ export class AuthService {
         user.firstName,
         resetUrl,
       );
-    } catch (err) {
+    } catch {
       // Log and continue, but still return success response to avoid leaking info
       // We won't throw since we don't want to leak whether email sent or not
     }
@@ -283,7 +283,7 @@ export class AuthService {
         user.email,
         user.firstName,
       );
-    } catch (err) {
+    } catch {
       // Log, but don't block.
     }
 
@@ -456,7 +456,7 @@ export class AuthService {
     ) {
       if (getRequiredEnv('NODE_ENV') !== 'production') {
         this.logger.warn(
-          `verifyEmail: Token expired for user ${user.email} - expiry: ${user.emailVerificationTokenExpiry}`,
+          `verifyEmail: Token expired for user ${user.email} - expiry: ${user.emailVerificationTokenExpiry?.toISOString() ?? 'null'}`,
         );
       }
       throw new BadRequestException(

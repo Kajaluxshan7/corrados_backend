@@ -20,7 +20,7 @@ import { MailModule } from '../mail/mail.module';
         return {
           secret: configService.getOrThrow<string>('JWT_SECRET'),
           signOptions: {
-            expiresIn: expiresIn as any, // Type assertion for string duration format
+            expiresIn,
           },
         };
       },
